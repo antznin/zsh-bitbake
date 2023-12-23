@@ -1,0 +1,111 @@
+#compdef bitbake
+#
+# zsh completion function for bitbake
+
+__bb_tasks()
+{
+  local -a bb_tasks
+
+  bb_tasks=(
+    'build:default task for a recipe'
+    'checkuri:validates the src_uri value'
+    'clean:removes all output files for a target'
+    'cleanall:removes all output files, shared state cache, and downloaded source files for a target'
+    'cleansstate:removes all output files and shared state cache for a target'
+    'compile:compiles the source in the compilation directory'
+    'configure:configures the source by enabling and disabling any build-time and configuration options'
+    'deploy:writes deployable output files to the deploy directory'
+    'deploy_setscene:writes deployable output files to the deploy directory (setscene version)'
+    'devshell:starts a shell with the environment set up for development/debugging'
+    'fetch:fetches the source code'
+    'install:copies files from the compilation directory to a holding area'
+    'listtasks:lists all defined tasks for a target'
+    'package:analyzes the content of the holding area and splits it into subsets based on available packages and files'
+    'package_qa:runs qa checks on packaged files'
+    'package_qa_setscene:runs qa checks on packaged files (setscene version)'
+    'package_setscene:analyzes the content of the holding area and splits it into subsets based on available packages and files (setscene version)'
+    'package_write_rpm:creates the actual rpm packages and places them in the package feed area'
+    'package_write_rpm_setscene:creates the actual rpm packages and places them in the package feed area (setscene version)'
+    'package_write_deb:creates the actual deb packages and places them in the package feed area'
+    'package_write_deb_setscene:creates the actual deb packages and places them in the package feed area (setscene version)'
+    'package_write_ipk:creates the actual ipk packages and places them in the package feed area'
+    'package_write_ipk_setscene:creates the actual ipk packages and places them in the package feed area (setscene version)'
+    'packagedata:creates package metadata used by the build system to generate the final packages'
+    'packagedata_setscene:creates package metadata used by the build system to generate the final packages (setscene version)'
+    'patch:locates patch files and applies them to the source code'
+    'populate_lic:writes license information for the recipe that is collected later when the image is constructed'
+    'populate_lic_setscene:writes license information for the recipe that is collected later when the image is constructed (setscene version)'
+    'populate_sysroot:copies a subset of files installed by do_install into the sysroot in order to make them available to other recipes'
+    'populate_sysroot_setscene:copies a subset of files installed by do_install into the sysroot in order to make them available to other recipes (setscene version)'
+    'prepare_recipe_sysroot'
+    'pydevshell:starts an interactive python shell for development/debugging'
+    'unpack:unpacks the source code into a working directory'
+  )
+
+  _describe -t bb_tasks "Common bitbake commands" bb_tasks $*
+}
+
+__recipes()
+{
+  local -a recipes
+
+  if [ -n "$ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION" ]; then
+    # TODO: print message?
+    return 0
+  fi
+
+  if [ -z "$BUILDDIR" ]; then
+    # TODO: print message?
+    return 0
+  fi
+
+  if ! command -v bitbake-layers sed tail >/dev/null; then
+    return 0
+  fi
+
+  local recipe_cache_path="$BUILDDIR/.recipe-cache"
+  if [ ! -f "$recipe_cache_path" ]; then
+    # TODO: print message?
+    bitbake-layers show-recipes --color=never -rb \
+      | sed -ne '/=== Available recipes: ===/,//p' \
+      | tail -n +2 \
+      >"$recipe_cache_path"
+  else
+    while IFS='' read -r recipe || [ -n "${recipe}" ]; do
+      recipes+=( "$recipe" )
+    done < "$recipe_cache_path"
+  fi
+
+  _describe -t recipes "Recipes in current environment" recipes $*
+}
+
+_bitbake()
+{
+  # local curcontext=$curcontext no='!' descr ret=1
+  local ret=1
+  # local -a context line state state_descr args tmp suf
+  local -a args
+
+  args=(
+    '(: * -)'{-h,--help}'[display help information]'
+    '(: * -)'--version'[display version information]'
+    '(-s,--show-versions)'{-s,--show-versions}'[show current and preferred versions of all recipes]'
+    '(-g,--graphviz)'{-g,--graphviz}'[save dependency tree information for the specified targets]:target'
+    '(-e,--environment)'{-e,--environment}'[show the global or per-recipe environment]:recipe'
+    '(-u,--ui)'{-u,--ui}'[user interface to use]:ui:(knotty ncurses teamcity)'
+    '(-f,--force)'{-f,--force}'[force the specified targets/task to run]'
+    '(-c,--cmd)'{-c,--cmd}'[specify the task to execute]:task:__bb_tasks'
+    '(-C)'-C'[invalidate task stamp and build specified target(s)]:task:__bb_tasks'
+    '(--runall)'--runall'[run the specified task for any recipe in the taskgraph]:task:__bb_tasks'
+
+   ': :__recipes'
+  )
+
+  # TODO:
+
+  _arguments -C -s -S : $args && ret=0
+
+  return ret
+}
+
+_bitbake "$@"
