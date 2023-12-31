@@ -37,12 +37,12 @@ __bb_tasks()
     'populate_lic_setscene:writes license information for the recipe that is collected later when the image is constructed (setscene version)'
     'populate_sysroot:copies a subset of files installed by do_install into the sysroot in order to make them available to other recipes'
     'populate_sysroot_setscene:copies a subset of files installed by do_install into the sysroot in order to make them available to other recipes (setscene version)'
-    'prepare_recipe_sysroot'
+    'prepare_recipe_sysroot:prepare the recipe'\''s sysroot'
     'pydevshell:starts an interactive python shell for development/debugging'
     'unpack:unpacks the source code into a working directory'
   )
 
-  _describe -t bb_tasks "Common bitbake commands" bb_tasks $*
+  _describe -t bb_tasks "Common bitbake tasks" bb_tasks $*
 }
 
 __recipes()
@@ -50,12 +50,10 @@ __recipes()
   local -a recipes
 
   if [ -n "$ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION" ]; then
-    # TODO: print message?
     return 0
   fi
 
-  if [ -z "$BUILDDIR" ]; then
-    # TODO: print message?
+  if [ ! -d "$BUILDDIR" ]; then
     return 0
   fi
 
@@ -65,7 +63,6 @@ __recipes()
 
   local recipe_cache_path="$BUILDDIR/.recipe-cache"
   if [ ! -f "$recipe_cache_path" ]; then
-    # TODO: print message?
     bitbake-layers show-recipes --color=never -rb \
       | sed -ne '/=== Available recipes: ===/,//p' \
       | tail -n +2 \
@@ -79,6 +76,44 @@ __recipes()
   _describe -t recipes "Recipes in current environment" recipes $*
 }
 
+__debug_domains() {
+  local -a debug_domains
+
+  debug_domains=(
+    'Build'
+    'Cache'
+    'CodeParser'
+    'Collection'
+    'Data'
+    'Event'
+    'Fetcher'
+    'layerindexlib'
+    'layerindexlib.cooker'
+    'layerindexlib.plugin'
+    'layerindexlib.restapi'
+    'Main'
+    'Monitor'
+    'OE.Terminal'
+    'Parsing'
+    'PersistData'
+    'Process'
+    'Provider'
+    'PRserv'
+    'RunQueue'
+    'RunQueue.HashEquiv'
+    'SigGen'
+    'SigGen.HashEquiv'
+    'TaskData'
+    'TestCodeParser'
+    'TestParse'
+    'TestSiggen'
+    'Util'
+    'Warnings'
+  )
+
+  _describe -t debug_domains "Common bitbake debug domains" debug_domains $*
+}
+
 _bitbake()
 {
   # local curcontext=$curcontext no='!' descr ret=1
@@ -90,18 +125,44 @@ _bitbake()
     '(: * -)'{-h,--help}'[display help information]'
     '(: * -)'--version'[display version information]'
     '(-s,--show-versions)'{-s,--show-versions}'[show current and preferred versions of all recipes]'
-    '(-g,--graphviz)'{-g,--graphviz}'[save dependency tree information for the specified targets]:target'
-    '(-e,--environment)'{-e,--environment}'[show the global or per-recipe environment]:recipe'
-    '(-u,--ui)'{-u,--ui}'[user interface to use]:ui:(knotty ncurses teamcity)'
+    '(-g,--graphviz)'{-g,--graphviz}'[save dependency tree information for the specified targets]'
+    '(-e,--environment)'{-e,--environment}'[show the global or per-recipe environment]'
+    '(-u,--ui)'{-u+,--ui=}'[user interface to use]: :(knotty ncurses teamcity)'
     '(-f,--force)'{-f,--force}'[force the specified targets/task to run]'
-    '(-c,--cmd)'{-c,--cmd}'[specify the task to execute]:task:__bb_tasks'
-    '(-C)'-C'[invalidate task stamp and build specified target(s)]:task:__bb_tasks'
-    '(--runall)'--runall'[run the specified task for any recipe in the taskgraph]:task:__bb_tasks'
+    '(-c,--cmd)'{-c+,--cmd=}'[specify the task to execute]: :__bb_tasks'
+    '(-C,--clear-stamp)'{-C+,--clear-stamp=}'[invalidate task stamp and build specified target(s)]: :__bb_tasks'
+    '(--runall --runonly)'--runall='[run the specified task for any recipe in the taskgraph of target]: :__bb_tasks'
+    '(--runonly --runall)'--runonly='[run only the specified task within the taskgraph of target]: :__bb_tasks'
+    '(--no-setscene --skip-setscene --setscene-only)'--no-setscene'[do not run any setscene tasks]'
+    '(--skip-setscene --no-setscene --setscene-only)'--skip-setscene'[skip setscene tasks if they would be executed]'
+    '(--setscene-only --skip-setscene --no-setscene)'--setscene-only'[only run setscene tasks]'
+    '(-n,--dry-run)'{-n,--dry-run}'[don'\''t execute, just go through the motions]'
+    '(-p,--parse-only)'{-p,--parse-only}'[quit after parsing the BB recipes]'
+    '(-k,--continue)'{-k,--continue}'[continue as much as possible after an error]'
+    '(-P,--profile)'{-P,--profile}'[profile the command and save reports]'
+    '(-S,--dump-signatures)'{-S+,--dump-signatures=}'[dump out the signature construction information]: :(none printdiff)'
+    '(--revisions-changed)'--revisions-changed'[set the exit code depending on upstream revisions changes]'
+    '(: *)'{-b+,--buildfile=}'[execute tasks from a specific .bb recipe]: :_files'
+    '*'{-D,--debug}'[increase the debug level]'
+    '(-l,--log-domains)'{-l+,--log-domains=}'[show debug logging for specified logging domains]: :__debug_domains'
+    '(-v,--verbose)'{-v,--verbose}'[enable tracing of shell tasks and print bb.note]'
+    '(-q,--quiet)'{-q,--quiet}'[output less log message data to the terminal]'
+    '(-w,--write-log)'{-w+,--write-log=}'[write the event log to a bitbake event json file]: :_files'
+    '(-B,--bind)'{-B+,--bind=}'[name/address for the bitbake xmlrpc server to bind to]: :'
+    '(-T,--idle-timeout)'{-T+,--idle-timeout=}'[timeout to unload bitbake server due to inactivity]: :'
+    '(--remote-server)'--remote-server='[connect to the specified server]: :'
+    '(-m,--kill-server)'{-m,--kill-server}'[terminate any running bitbake server]'
+    '(--token)'--token='[token to be used when connecting to a remote server]:xmlrpctoken:'
+    '(--observe-only)'--observe-only'[connect to a server as an observing-only client]'
+    '(--status-only)'--status-only'[check the status of the remote bitbake server]'
+    '(--server-only)'--server-only'[run bitbake without a ui]'
+    '(-r,--read)'{-r+,--read=}'[read the specified file before bitbake.conf]: :_files'
+    '(-R,--postread)'{-R+,--post-read=}'[read the specified file after bitbake.conf]: :_files'
+    '(-I,--ignore-deps)'{-I+,--ignore-deps=}'[assume these dependencies are already provided]: :'
 
-   ': :__recipes'
+    # TODO exclusion not working?
+    '*: :__recipes'
   )
-
-  # TODO:
 
   _arguments -C -s -S : $args && ret=0
 
