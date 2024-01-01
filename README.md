@@ -51,10 +51,11 @@ trying to complete a recipe for the first time in the current environment, the
 `bitbake-layers show-recipes` command is run to fetch the complete list of
 recipes.
 
-This command execution has a few requirements (not run and quietly exited
+This command execution has a few requirements (not run and quietly exited if
 unmet):
 
-* `ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION` is not set (see [Configuration](#configuration)).
+* `ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION` is not set (see
+  [Configuration](#configuration)).
 
 * `BUILDDIR` is a directory. This variable is set by the `oe-init-build-env`
   script.
