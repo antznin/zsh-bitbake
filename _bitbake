@@ -1,12 +1,23 @@
-#compdef bitbake
+#compdef bitbake devtool
 #
-# zsh completion function for bitbake
+# zsh completion function for bitbake and devtool
+
+# Options passed to _arguments.
+__arguments_opts ()
+{
+  print -- \
+    -s  # option stacking
+}
+
+#
+# bitbake
+#
 
 __bb_tasks()
 {
-  local -a bb_tasks
+  local -a _bb_tasks
 
-  bb_tasks=(
+  _bb_tasks=(
     'build:default task for a recipe'
     'checkuri:validates the src_uri value'
     'clean:removes all output files for a target'
@@ -42,12 +53,12 @@ __bb_tasks()
     'unpack:unpacks the source code into a working directory'
   )
 
-  _describe -t bb_tasks "Common bitbake tasks" bb_tasks $*
+  _describe -t _bb_tasks "Common bitbake tasks" _bb_tasks
 }
 
 __recipes()
 {
-  local -a recipes
+  local -a _recipes
 
   if [ -n "$ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION" ]; then
     return 0
@@ -69,17 +80,17 @@ __recipes()
       >"$recipe_cache_path"
   else
     while IFS='' read -r recipe || [ -n "${recipe}" ]; do
-      recipes+=( "$recipe" )
+      _recipes+=( "$recipe" )
     done < "$recipe_cache_path"
   fi
 
-  _describe -t recipes "Recipes in current environment" recipes $*
+  _describe -t _recipes "Recipes in current environment" _recipes
 }
 
 __debug_domains() {
-  local -a debug_domains
+  local -a _debug_domains
 
-  debug_domains=(
+  _debug_domains=(
     'Build'
     'Cache'
     'CodeParser'
@@ -111,15 +122,19 @@ __debug_domains() {
     'Warnings'
   )
 
-  _describe -t debug_domains "Common bitbake debug domains" debug_domains $*
+  _describe -t _debug_domains "Common bitbake debug domains" _debug_domains
 }
 
 _bitbake()
 {
-  # local curcontext=$curcontext no='!' descr ret=1
-  local ret=1
-  # local -a context line state state_descr args tmp suf
+  integer ret=1
   local -a args
+
+  # We might be completing another command like devtool.
+  if [[ $service != bitbake ]]; then
+      _call_function - _$service
+      return
+  fi
 
   args=(
     '(: * -)'{-h,--help}'[display help information]'
@@ -133,7 +148,7 @@ _bitbake()
     '(-C,--clear-stamp)'{-C+,--clear-stamp=}'[invalidate task stamp and build specified target(s)]: :__bb_tasks'
     '(--runall --runonly)'--runall='[run the specified task for any recipe in the taskgraph of target]: :__bb_tasks'
     '(--runonly --runall)'--runonly='[run only the specified task within the taskgraph of target]: :__bb_tasks'
-    '(--no-setscene --skip-setscene --setscene-only)'--no-setscene'[do not run any setscene tasks]'
+    '(--no-setscene --skip-setscene --setscene-only)'--no-setscene'[don'\''t run any setscene tasks]'
     '(--skip-setscene --no-setscene --setscene-only)'--skip-setscene'[skip setscene tasks if they would be executed]'
     '(--setscene-only --skip-setscene --no-setscene)'--setscene-only'[only run setscene tasks]'
     '(-n,--dry-run)'{-n,--dry-run}'[don'\''t execute, just go through the motions]'
@@ -160,11 +175,358 @@ _bitbake()
     '(-R,--postread)'{-R+,--post-read=}'[read the specified file after bitbake.conf]: :_files'
     '(-I,--ignore-deps)'{-I+,--ignore-deps=}'[assume these dependencies are already provided]: :'
 
-    # TODO exclusion not working?
     '*: :__recipes'
   )
 
-  _arguments -C -s -S : $args && ret=0
+  _arguments $(__arguments_opts) $args && ret=0
+
+  return ret
+}
+
+#
+# devtool
+#
+
+__devtool_subcommand ()
+{
+  integer ret=1
+  local -a args
+
+  case "$words[1]" in
+    (add)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-s --same-dir)'{-s,--same-dir}'[build in same directory as source]'
+        '(--no-same-dir)'--no-same-dir'[force build in a separate build directory]'
+        '(--npm-dev)'--npm-dev'[for npm also fetch devDependencies]'
+        '(-V --version)'{-V+,--version=}'[version to use within recipe (PV)]'
+        '(-g --no-git)'{-g,--no-git}'[if fetching source don'\''t set up source tree as a git repo]'
+        '(-S --srcrev)'{-S+,--srcrev=}'[source revision to fetch if fetching from an SCM]'
+        '(-a --autorev)'{-a,--autorev}'[if fetching from a git repo set SRCREV in to AUTOREV]'
+        '(-B --srcbranch)'{-B+,--srcbranch=}'[branch in source repo if fetching from an SCM]'
+        '(-b --binary)'{-b,--binary}'[treat the source tree as something that should be installed verbatim]'
+        '(--also-native)'--also-native'[also add native variant]'
+        '(--src-subdir)'--src-subdir='[specify subdirectory within source tree to use]'
+        '(--mirrors)'--mirrors'[enable PREMIRRORS and MIRRORS for source tree fetching]'
+        '(-p --provides)'{-p+,--provides=}'[specify an alias for the item provided by recipe]'
+
+        ':recipename:'
+        ':srctree:_directories'
+        ':fetchuri:'
+      )
+      ;;
+    (build-image)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-p --add-packages)'{-p+,--add-packages=}'[specify comma-separated packages to be added to the image]'
+
+        ': :__recipes'
+      )
+      ;;
+    (build)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-s --disable-parallel-make)'{-s,--disable-parallel-make}'[disable make parallelism]'
+        '(-c --clean)'{-c,--clean}'[clean up recipe building results]'
+
+        ': :__recipes'
+      )
+      ;;
+    (check-upgrade-status)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-a --all)'{-a,--all}'[show all recipes, not just recipes needing upgrade]'
+
+        '*: :__recipes'
+      )
+      ;;
+    (configure-help)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-p --no-pager)'{-p,--no-pager}'[disable paged output]'
+        '(-n --no-header)'{-n,--no-header}'[disable explanatory header text]'
+        '(: - *)'--arg'[pass remaining arguments to configure script instead of --help]'
+
+        ': :__recipes'
+      )
+      ;;
+    (create-workspace)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(--layerseries)'--layerseries'[layer series the workspace should be set to be compatible with]'
+        '(--create-only)'--create-only'[only create the workspace layer don'\''t alter configuration]'
+
+        ': :_directories'  # layerpath
+      )
+      ;;
+    (deploy-target)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-c --no-host-check)'{-c,--no-host-check}'[disable ssh host key checking]'
+        '(-s --show-status)'{-s,--show-status}'[show progress/status output]'
+        '(-n --dry-run)'{-n,--dry-run}'[list files to be deployed only]'
+        '(-p --no-preserve)'{-p,--no-preserve}'[don'\''t preserve existing files]'
+        '(--no-check-space)'--no-check-space'[don'\''t check for available space before deploying]'
+        '(-e --ssh-exec)'{-e+,--ssh-exec=}'[executable to use in place of ssh]'
+        '(-P --port)'{-P+,--port=}'[port to use for connection to the target]'
+        '(-I --key)'{-I+,--key=}'[ssh private key for connection to the target]'
+        '(-S --strip --no-strip)'{-S,--strip}'[strip executables prior to deploying]'
+        '(--no-strip -S --strip)'--no-strip'[don'\''t strip executables prior to deploy]'
+
+        ': :__recipes'
+        ': :_hosts'  # target
+      )
+      ;;
+    (edit-recipe)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+
+        ': :__recipes'
+      )
+      ;;
+    (export)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-f --file)'{-f+,--file=}'[output archive file name]'
+        '(-o --overwrite)'{-o,--overwrite}'[overwrite previous export tar archive]'
+        '*'{-i+,--include=}'[include recipes into the tar archive]: :__recipes'
+        '*'{-e+,--exclude=}'[exclude recipes into the tar archive]: :__recipes'
+      )
+      ;;
+    (extract)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-b --branch)'{-b+,--branch=}'[name for development branch to checkout]'
+        '(-O --no-overrides)'{-O,--no-overrides}'[don'\''t create branches for other override configurations]'
+        '(--keep-temp)'--keep-temp'[keep temporary directory]'
+
+        ': :__recipes'
+        ': :_directories'  # srctree
+      )
+      ;;
+    (find-recipe)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+
+        ': :__recipes'
+      )
+      ;;
+    (finish)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-m --mode)'{-m+,--mode=}'[update mode (patch, src or auto)]: :(patch srcrev auto)'
+        '(--initial-rev)'--initial-rev='[override starting revision for patches]'
+        '(-f --force)'{-f,--force}'[force continuing even if there are uncommitted changes in the source tree repo]'
+        '(-r --remove-work)'{-r,--remove-work}'[clean the sources directory under workspace]'
+        '(-n --no-clean)'{-n,--no-clean}'[don'\''t clean the sysroot to remove recipe output]'
+        '(-O --no-overrides)'{-O,--no-overrides}'[don'\''t handle other override branches if they exist]'
+        '(-N --dry-run)'{-N,--dry-run}'[just report changes instead of writing them]'
+        '(--force-patch-refresh)'--force-patch-refresh'[update patches in layer even if they haven'\''t been modified]'
+
+        ': :__recipes'
+        ': :_directories'  # destination
+      )
+      ;;
+    (import)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-o --overwrite)'{-o,--overwrite}'[overwrite files when extracting]'
+
+        ': :_files'
+      )
+      ;;
+    (latest-version)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+
+        ': :__recipes'
+      )
+      ;;
+    (menuconfig)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+
+        ': :__recipes'
+      )
+      ;;
+    (modify)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-w --wildcard)'{-w,--wildcard}'[use wildcard for unversioned bbappend]'
+        '(-x --extract)'{-x,--extract}'[extract source for recipe (default)]'
+        '(-n --no-extract)'{-n,--no-extract}'[don'\''t extract source, expect it to exist]'
+        '(-s --same-dir)'{-s,--same-dir}'[build in same directory as source]'
+        '(--no-same-dir)'--no-same-dir'[force build in a separate build directory]'
+        '(-b --branch)'{-b+,--branch=}'[name for development branch to checkout]'
+        '(-O --no-overrides)'{-O,--no-overrides}'[don'\''t create branches for other override configurations]'
+        '(--keep-temp)'--keep-temp'[keep temporary directory (for debugging)]'
+
+        ': :__recipes'
+        ': :_directories'  # srctree
+      )
+      ;;
+    (rename)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-V --version)'{-V+,--version=}'[change the version (version in the recipe file name)]'
+        '(-s --no-srctree)'{-s,--no-srctree}'[don'\''t rename the source tree directory]'
+
+        ': :__recipes'
+        ':newname:'
+      )
+      ;;
+    (reset)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-a --all)'{-a,--all}'[reset all recipes (clear workspace)]'
+        '(-n --no-clean)'{-n,--no-clean}'[don'\''t clean the sysroot to remove recipe output]'
+        '(-r --remove-work)'{-r,--remove-work}'[clean the sources directory along with append]'
+
+        ': :__recipes'
+      )
+      ;;
+    (search)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+
+        ':keyword:'
+      )
+      ;;
+    (status)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+      )
+      ;;
+    (sync)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-b --branch)'{-b+,--branch=}'[name for development branch to checkout]'
+        '(--keep-temp)'--keep-temp'[keep temporary directory for debugging]'
+
+        ': :__recipes'
+        ': :_directories'  # srctree
+      )
+      ;;
+    (undeploy-target)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-c --no-host-check)'{-c,--no-host-check}'[disable ssh host key checking]'
+        '(-s --show-status)'{-s,--show-status}'[show progress/status output]'
+        '(-a --all)'{-a,--all}'[undeploy all recipes deployed on the target]'
+        '(-n --dry-run)'{-n,--dry-run}'[list files to be undeployed only]'
+        '(-e --ssh-exec)'{-e+,--ssh-exec=}'[executable to use in place of ssh]'
+        '(-P --port)'{-P+,--port=}'[port to use for connection to the target]'
+        '(-I --key)'{-I+,--key=}'[ssh private key for connection to the target]'
+
+        ': :__recipes'
+        ': :_hosts'  # target
+      )
+      ;;
+    (update-recipe)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-m --mode)'{-m+,--mode=}'[update mode (patch, src or auto)]: :(patch srcrev auto)'
+        '(--initial-rev)'--initial-rev='[override starting revision for patches]'
+        '(-a --append)'{-a+,--append=}'[write changes to a bbappend in the specified layer instead]'
+        '(-w --wildcard-version)'{-w,--wildcard-version}'[in conjunction with -a use a wildcard to apply to any recipe version]'
+        '(-n --no-remove)'{-n,--no-remove}'[don'\''t remove patches, only add or update]'
+        '(-O --no-overrides)'{-O,--no-overrides}'[don'\''t handle other override branches]'
+        '(-N --dry-run)'{-N,--dry-run}'[just report changes instead of writing them]'
+        '(--force-patch-refresh)'--force-patch-refresh'[update patches in the layer even if unmodified]'
+
+        ': :__recipes'
+      )
+      ;;
+    (upgrade)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-V --version)'{-V+,--version=}'[version to upgrade to (PV)]'
+        '(-S --srcrev)'{-S+,--srcrev=}'[source revision to upgrade to if using an SCM]'
+        '(-B --srcbranch)'{-B+,--srcbranch=}'[branch in source repo containing the revision to use]'
+        '(-b --branch)'{-b+,--branch=}'[name for new development branch to checkout]'
+        '(--no-patch)'--no-patch'[don'\''t apply patches from the recipe to the new source code]'
+        '(-O --no-overrides)'{-O,--no-overrides}'[don'\''t create branches for other override configurations]'
+        '(-s --same-dir)'{-s,--same-dir}'[build in same directory as source]'
+        '(--no-same-dir)'--no-same-dir'[force build in a separate build directory]'
+        '(--keep-temp)'--keep-temp'[keep temporary directory (for debugging)]'
+        '(--keep-failure)'--keep-failure'[keep failed upgrade recipe and associated files (for debugging)]'
+
+        ': :__recipes'
+        ': :_directories'  # srctree
+      )
+      ;;
+  esac
+
+  _arguments $(__arguments_opts) $args && ret=0
+
+  return ret
+}
+
+__devtool_commands ()
+{
+  local -a _devtool_commands
+
+  _devtool_commands=(
+    'add:add a new recipe'
+    'build-image:build image including workspace recipe packages'
+    'build:build a recipe'
+    'check-upgrade-status:report upgradability for multiple (or all) recipes'
+    'configure-help:get help on configure script options'
+    'create-workspace:set up workspace in an alternative location'
+    'deploy-target:deploy recipe output files to live target machine'
+    'edit-recipe:edit a recipe file'
+    'export:export workspace into a tar archive'
+    'extract:extract the source for an existing recipe'
+    'find-recipe:find a recipe file'
+    'finish:finish working on a recipe in your workspace'
+    'import:import exported tar archive into workspace'
+    'latest-version:report the latest version of an existing recipe'
+    'menuconfig:alter build-time configuration for a recipe'
+    'modify:modify the source for an existing recipe'
+    'rename:rename a recipe file in the workspace'
+    'reset:remove a recipe from your workspace'
+    'search:search available recipes'
+    'status:show workspace status'
+    'sync:synchronize the source tree for an existing recipe'
+    'undeploy-target:undeploy recipe output files in live target machine'
+    'update-recipe:apply changes from external source tree to recipe'
+    'upgrade:upgrade an existing recipe'
+  )
+
+  _describe -t _devtool_commands "devtool commands" _devtool_commands
+}
+
+_devtool()
+{
+  integer ret=1
+  local -a args
+
+  # Global arguments, not command specific.
+  args=(
+    '(: * -)'{-h,--help}'[display help information]'
+    '(: * -)'--version'[display version information]'
+    '(--basepath)'--basepath='[base directory of sdk or build directory]: :_directories'
+    '(--bbpath)'--bbpath='[explicitly specify the BBPATH]:bbpath:'
+    '(-d,--debug -q --quiet)'{-d,--debug}'[enable debug output]'
+    '(-q,--quiet -d,--debug)'{-q,--quiet}'[print only errors]'
+    '(--color)'--color='[colorize output]: :(auto always never)'
+
+    '(-): :->command'
+    '(-)*:: :->option-or-argument'
+  )
+
+  _arguments $(__arguments_opts) $args && ret=0
+
+  case $state in
+    (command)
+      # Completion for devtool's commands (add, modify, …).
+      __devtool_commands && ret=0
+      ;;
+    (option-or-argument)
+      # Completion for devtool commands's options.
+      __devtool_subcommand && ret=0
+      ;;
+  esac
 
   return ret
 }

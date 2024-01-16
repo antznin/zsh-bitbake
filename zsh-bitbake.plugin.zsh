@@ -1,4 +1,4 @@
-compdef "_bitbake" bitbake
+compdef "_bitbake" bitbake devtool
 
 ## Aliases.
 alias bb=bitbake
