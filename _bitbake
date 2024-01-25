@@ -53,6 +53,17 @@ __bb_tasks()
     'unpack:unpacks the source code into a working directory'
   )
 
+  # The array `line` stores the normal arguments from the command line.
+  # Add kbuild tasks to the completion when matching _kbuild_regexp.
+  local kbuild_regexp="^linux-.*|^busybox$|^u-boot-.*"
+  if [[ ${#line[@]} == 1 ]] && [[ $line =~ $kbuild_regexp ]]; then
+    _bb_tasks+=(
+      'menuconfig:runs '\''make menuconfig'\'
+      'diffconfig:compares the old and new config files after running do_menuconfig'
+      'savedefconfig:creates a minimal configuration file'
+    )
+  fi
+
   _describe -t _bb_tasks "Common bitbake tasks" _bb_tasks
 }
 
