@@ -64,4 +64,5 @@ unmet):
 
 This creates a file `$BUILDDIR/.recipe-cache` that stores the list of recipes.
 This file is not automatically updated if recipes are added or removed in the
-current environment (it would be too slow and costly).
+current environment (it would be too slow and costly). File must be removed to
+regenerate it on the next completion.
