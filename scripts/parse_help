@@ -59,7 +59,7 @@ class Option:
 
 
 @dataclass
-class Parser():
+class HelpParser():
 
     args: List[Argument] = field(default_factory=list)
     opts: List[Option] = field(default_factory=list)
@@ -134,7 +134,7 @@ class Parser():
         return out.strip()
 
 
-class DevtoolParser(Parser):
+class DevtoolHelpParser(HelpParser):
 
     # Subcommand with description:
     #
@@ -209,7 +209,7 @@ class DevtoolParser(Parser):
 
                 m_desc, m_nodesc = None, None
 
-class DevtoolSubcommandParser(Parser):
+class DevtoolSubcommandHelpParser(HelpParser):
 
     def parse_help(self, help_txt: str) -> None:
         """
@@ -335,13 +335,13 @@ def main():
         aparser.print_usage()
         exit(1)
 
-    parser = Parser()
+    parser = HelpParser()
 
     if pargs.mode == "devtool":
-        parser = DevtoolParser()
+        parser = DevtoolHelpParser()
 
     if pargs.mode == "devtool.subcommand":
-        parser = DevtoolSubcommandParser()
+        parser = DevtoolSubcommandHelpParser()
 
     parser.parse_help(help_txt)
 
