@@ -9,6 +9,13 @@ from typing import List
 
 
 @dataclass
+class Subcommand:
+
+    name: str = ""
+    desc: str = ""
+
+
+@dataclass
 class Argument:
 
     name: str = ""
@@ -52,10 +59,52 @@ class Option:
 
 
 @dataclass
-class Parser:
+class Parser():
 
     args: List[Argument] = field(default_factory=list)
-    opts:  List[Option] = field(default_factory=list)
+    opts: List[Option] = field(default_factory=list)
+    subcommands: List[Subcommand] = field(default_factory=list)
+
+    # Argument:
+    #
+    #   recipename            Name for new recipe to add
+    #
+    args_re = re.compile(
+        r"^  (?P<name>[a-zA-Z]+)"  # argument name
+        r"\s+"                     # spaces between name and description
+        r"(?P<desc>\S.+)$"         # the description
+    )
+
+    # Option with description not on the same line:
+    #
+    # --srcrev SRCREV, -S SRCREV
+    #                   Source revision to fetch...
+    #
+    opts_re_nodesc = re.compile(
+        r"^  (?P<opt1>[a-zA-Z-]+)"    # the first opt
+        r"( (?P<opt_arg>[A-Z_]+))?"   # the first option argument (optional)
+        r"( \[[A-Z_]+ \.\.\.\])?"     # additional first option arguments (optional)
+        r"(, (?P<opt2>[a-zA-Z-]+))?"  # the second opt (optional)
+        r"( [A-Z_]+)?"                # the second option argument (optional)
+        r"( \[[A-Z_]+ \.\.\.\])?$"    # additional second option arguments (optional)
+    )
+
+    # Option with description on the same line:
+    #
+    #   -h, --help            show this help message and exit
+    #
+    opts_re_desc = re.compile(
+        r"^  (?P<opt1>[a-zA-Z-]+)"    # the first opt
+        r"(( (?P<opt_arg>[A-Z_]+))"   # the first option argument (optional)
+        r"|( \.\.\.))?"               # remainder (optional)
+        r"(, (?P<opt2>[a-zA-Z-]+))?"  # the second opt (optional)
+        r"( [A-Z_]+)?"                # the second option argument (optional)
+        r"\s+"                        # spaces between opts and description
+        r"(?P<desc>\S.+)$"            # the description
+    )
+
+    def parse_help(self, help_txt: str) -> None:
+        raise NotImplementedError("Do not call parse_help from Parser directly.")
 
     @property
     def zsh_args(self):
@@ -68,35 +117,106 @@ class Parser:
         out = out[:-1]
         return out
 
+    @property
+    def opts_oneperline(self):
+        out = ""
+        for opt in self.opts:
+            out += f"{opt.name}\n"
+            if opt.alt_name:
+                out += f"{opt.alt_name}\n"
+        return out.strip()
 
-class DevtoolSubcommandParser(Parser):
+    @property
+    def subc_oneperline(self):
+        out = ""
+        for subc in self.subcommands:
+            out += f"{subc.name}\n"
+        return out.strip()
 
-    args_re = re.compile(
-        r"^  (?P<name>[a-zA-Z]+)"  # argument name
-        r"\s+"                  # spaces between name and description
-        r"(?P<desc>\S.+)$"      # the description
-    )
 
-    opts_re_nodesc = re.compile(
-        r"^  (?P<opt1>[a-zA-Z-]+)"     # the first opt
-        r"( (?P<opt_arg>[A-Z_]+))?"    # the first option argument (optional)
-        r"( \[[A-Z_]+ \.\.\.\])?"      # additional first option arguments (optional)
-        r"(, (?P<opt2>[a-zA-Z-]+))?"   # the second opt (optional)
-        r"( [A-Z_]+)?"                # the second option argument (optional)
-        r"( \[[A-Z_]+ \.\.\.\])?$"      # additional second option arguments (optional)
-    )
+class DevtoolParser(Parser):
 
-    opts_re_desc = re.compile(
-        r"^  (?P<opt1>[a-zA-Z-]+)"     # the first opt
-        r"(( (?P<opt_arg>[A-Z_]+))"    # the first option argument (optional)
-        r"|( \.\.\.))?"                # remainder (optional)
-        r"(, (?P<opt2>[a-zA-Z-]+))?"   # the second opt (optional)
-        r"( [A-Z_]+)?"                 # the second option argument (optional)
-        r"\s+"                         # spaces between opts and description
-        r"(?P<desc>\S.+)$"             # the description
+    # Subcommand with description:
+    #
+    #   add                   Add a new recipe
+    #
+    subc_re = re.compile(
+        r"^    (?P<name>[a-z-]+)"  # the subcommand
+        r"\s+"                     # spaces between opts and description
+        r"(?P<desc>\S.+)$"         # the description
     )
 
     def parse_help(self, help_txt: str) -> None:
+
+        in_opts = False
+        in_subcommands = False
+        desc_next_line = False
+        prev_opt = Option()
+
+        for line in help_txt.splitlines():
+
+            if line.startswith("options:"):
+                in_subcommands = False
+                in_opts = True
+                continue
+
+            if line.startswith("subcommands:"):
+                in_subcommands = True
+                in_opts = False
+                continue
+
+            if in_subcommands:
+                if m := re.match(self.subc_re, line):
+                    self.subcommands += [Subcommand(name=m.group("name"),
+                                                    desc=m.group("desc"))]
+
+
+            if in_opts:
+                m_desc = re.match(self.opts_re_desc, line)
+                m_nodesc = re.match(self.opts_re_nodesc, line)
+                if m_nodesc:
+                    m = m_nodesc
+                else:
+                    m = m_desc
+
+                if desc_next_line:
+                    desc = line.strip()
+                    prev_opt.desc = desc[0].lower() + desc[1:]
+                    desc_next_line = False
+
+                elif m:
+                    opt = Option()
+                    desc = ""
+                    if m_desc and not m_nodesc:
+                        desc = m.group("desc")
+                    if desc:
+                        opt.desc = desc[0].lower() + desc[1:]
+                    opt.arg = m.group("opt_arg")
+                    opt1, opt2 = m.group("opt1"), m.group("opt2")
+                    if opt2 is not None:
+                        if opt2.startswith("--"):
+                            opt.name = opt1
+                            opt.alt_name = opt2
+                        else:
+                            opt.name = opt2
+                            opt.alt_name = opt1
+                    else:
+                        opt.name = opt1
+                    self.opts += [opt]
+                    if m_nodesc is not None:
+                        prev_opt = opt
+                        desc_next_line = True
+
+                m_desc, m_nodesc = None, None
+
+class DevtoolSubcommandParser(Parser):
+
+    def parse_help(self, help_txt: str) -> None:
+        """
+        Parse a devtool subcommand's help (ex.: devtool add --help).
+        Separated in two sections: "arguments" and "options" that we parse
+        differently (in_args/in_opts).
+        """
 
         in_args = False
         in_opts = False
@@ -159,7 +279,7 @@ class DevtoolSubcommandParser(Parser):
                 m_desc, m_nodesc = None, None
 
 
-def display_zsh_opts(text: str, indent: int = 0):
+def print_opts_zsh(text: str, indent: int = 0):
     for line in text.splitlines():
         print(" " * indent + line)
 
@@ -169,14 +289,27 @@ def parse_arguments() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Parse bitbake-like tools help messages")
 
-    parser.add_argument("--to-zsh-args",
+    parser.add_argument("--print-opts",
                         action="store_true",
                         default=False,
-                        dest="to_zsh",
+                        dest="print_opts",
+                        help="Print options (one per line)")
+
+    parser.add_argument("--print-subcommands",
+                        action="store_true",
+                        default=False,
+                        dest="print_subcommands",
+                        help="Print subcommands (one per line)")
+
+    parser.add_argument("--print-args-zsh",
+                        action="store_true",
+                        default=False,
+                        dest="print_opts_zsh",
                         help="Print parsed help as zsh arguments")
 
     parser.add_argument("--parse-mode",
                         choices=[
+                            "devtool",
                             "devtool.subcommand",
                         ],
                         dest="mode",
@@ -202,14 +335,25 @@ def main():
         aparser.print_usage()
         exit(1)
 
-    parser = None
+    parser = Parser()
+
+    if pargs.mode == "devtool":
+        parser = DevtoolParser()
 
     if pargs.mode == "devtool.subcommand":
         parser = DevtoolSubcommandParser()
-        parser.parse_help(help_txt)
 
-    if pargs.to_zsh and parser is not None:
-        display_zsh_opts(parser.zsh_args, pargs.indent)
+    parser.parse_help(help_txt)
+
+    if parser is not None:
+        if pargs.print_opts_zsh:
+            print_opts_zsh(parser.zsh_args, pargs.indent)
+
+        if pargs.print_opts:
+            print(parser.opts_oneperline)
+
+        if pargs.print_subcommands:
+            print(parser.subc_oneperline)
 
 
 if __name__ == "__main__":
