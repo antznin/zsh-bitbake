@@ -3,7 +3,7 @@
 # Run test-complete against all supported tools.
 
 main() {
-  integer ret=0
+  local ret=0
   local test_complete="${1:-ci/test-complete}"
   local help_parser="${2:-ci/parse-help}"
   local oe_init="${3:-oecore/oe-init-build-env}"
@@ -18,16 +18,16 @@ main() {
   $test_complete devtool subcommands || ret=1
 
   # Fetch subcommands with parse-help
-  subcommands=(
-    $(COLUMNS=7000 devtool --help |
-      $help_parser --parse-mode devtool --print-subcommands)
+  mapfile -t subcommands < <(
+    COLUMNS=7000 devtool --help |
+    $help_parser --parse-mode devtool --print-subcommands
   )
 
   for subc in "${subcommands[@]}"; do
     $test_complete devtool "$subc" || ret=1
   done
 
-  return $ret
+  exit $ret
 }
 
 main "$@"

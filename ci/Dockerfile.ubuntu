@@ -1,0 +1,41 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update \
+ && apt-get --yes --fix-broken upgrade \
+ && apt-get --yes --no-install-recommends install \
+      build-essential \
+      chrpath \
+      cpio \
+      debianutils \
+      diffstat \
+      file \
+      gawk \
+      gcc \
+      git \
+      iputils-ping \
+      libacl1 \
+      libegl1-mesa \
+      liblz4-tool \
+      libsdl1.2-dev \
+      locales \
+      locales-all \
+      mesa-common-dev \
+      python3 \
+      python3-git \
+      python3-jinja2 \
+      python3-pexpect \
+      python3-pip \
+      python3-subunit \
+      socat \
+      texinfo \
+      unzip \
+      wget \
+      xz-utils \
+      zsh \
+      zstd \
+ && apt-get --yes autoremove \
+ && apt-get clean
+
+RUN ["/bin/bash"]
