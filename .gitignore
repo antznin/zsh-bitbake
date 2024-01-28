@@ -1,0 +1,6 @@
+bitbake/
+oecore/
+bitbake-cookerdaemon.log
+cache/
+conf/
+tmp-glibc/

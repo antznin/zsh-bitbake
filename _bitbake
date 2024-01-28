@@ -143,7 +143,7 @@ _bitbake()
 
   # We might be completing another command like devtool.
   if [[ $service != bitbake ]]; then
-      _call_function - _$service
+      _$service
       return
   fi
 
@@ -189,6 +189,12 @@ _bitbake()
     '*: :__recipes'
   )
 
+  # test-complete logic
+  [[ $_COMPLETE_LIST_ARGS == 1 ]] && {
+    print -rl - $args
+    return 0
+  }
+
   _arguments $(__arguments_opts) $args && ret=0
 
   return ret
@@ -202,6 +208,14 @@ __devtool_subcommand ()
 {
   integer ret=1
   local -a args
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    # Override words to artificially fill it with the subcommand from
+    # test-complete.
+    local -a words=( $_COMPLETE_SUBCOMMAND )
+  fi
+
 
   case "$words[1]" in
     (add)
@@ -468,6 +482,12 @@ __devtool_subcommand ()
       ;;
   esac
 
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    print -rl - $args
+    return 0
+  fi
+
   _arguments $(__arguments_opts) $args && ret=0
 
   return ret
@@ -504,6 +524,12 @@ __devtool_commands ()
     'upgrade:upgrade an existing recipe'
   )
 
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMANDS == 1 ]]; then
+    print -rl - $_devtool_commands
+    return 0
+  fi
+
   _describe -t _devtool_commands "devtool commands" _devtool_commands
 }
 
@@ -526,7 +552,18 @@ _devtool()
     '(-)*:: :->option-or-argument'
   )
 
-  _arguments $(__arguments_opts) $args && ret=0
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMANDS == 1 ]]; then
+    state="command"
+  elif [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    state="option-or-argument"
+  elif [[ $_COMPLETE_LIST_ARGS == 1 ]]; then
+    print -rl - $args
+    return 0
+  else
+    _arguments $(__arguments_opts) $args && ret=0
+  fi
 
   case $state in
     (command)

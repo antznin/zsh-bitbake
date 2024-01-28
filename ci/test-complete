@@ -1,0 +1,206 @@
+#!/usr/bin/env zsh
+#
+# Credits to BurntSushi/ripgrep's ci/test-complete.
+#
+# This file can be used to compare the options listed by an OE tool's help and
+# the completions offered by this repo's _bitbake.
+# Can be called in the following ways:
+# * ./ci/test-complete bitbake: compare bitbake --help
+# * ./ci/test-complete devtool: compare devtool --help
+# * ./ci/test-complete devtool subcommands: compare devtool subcommands (add, modify, …)
+# * ./ci/test-complete devtool <subcommand>: compare devtool <subcommand> --help
+
+emulate zsh -o extended_glob -o no_function_argzero -o no_unset
+
+function get_comp_args()
+{
+  local comp_file="$1"
+  local service="$2"
+  local subcommand="${3-}"
+
+  # Our completion file will error out otherwise, with errors like
+  # "_COMPLETE_LIST_SUBCOMMANDS: parameter not set".
+  setopt local_options unset
+
+  # Follow a path in _bitbake depending on the tool/subcommand.
+  if [[ $subcommand == subcommands ]]; then
+    export _COMPLETE_LIST_SUBCOMMANDS=1
+  elif [[ -n $subcommand ]] && [[ $subcommand != none ]]; then
+    export _COMPLETE_LIST_SUBCOMMAND=1
+    export _COMPLETE_SUBCOMMAND=$subcommand
+  else
+    export _COMPLETE_LIST_ARGS=1
+  fi
+
+  # Our completion function recognises special variables which tells it to
+  # dump _arguments specs and then just return. But do this in a sub-shell
+  # anyway to avoid any weirdness.
+  # Adjust $service for the different tools supported by the completion file.
+  ( service="$service" source "$comp_file" )
+}
+
+function sanity_checks()
+{
+  local command="$1"
+  local comp_file="$2"
+
+  if ! command -v $command >/dev/null; then
+    print "bitbake not found"
+    return 1
+  fi
+
+  if [[ ! -f "$comp_file" ]]; then
+    print "File not found: $_bitbake"
+    return 1
+  fi
+
+}
+
+function compare_bitbake()
+{
+  local diff
+  local _bitbake="_bitbake"  # local path
+  local help_parser="ci/parse-help"
+  local -a help_args comp_args
+
+  sanity_checks bitbake "$_bitbake"
+  local bitbake="$(which bitbake)"
+
+  print -rl - "Comparing options:" "-$bitbake" "+$_bitbake"
+
+  help_args=( ${(f)"$(
+      COLUMNS=7000 $bitbake --help |
+      $help_parser --parse-mode bitbake --print-opts |
+      sort -u
+  )"} )
+
+  comp_args=( ${(f)"$( get_comp_args $_bitbake bitbake )"} )
+  comp_args=( ${comp_args#\(*\)}    ) # Strip excluded options
+  comp_args=( ${comp_args#\*}       ) # Strip repetition indicator
+  comp_args=( ${comp_args%%-[:[]*}  ) # Strip everything after -optname-
+  comp_args=( ${comp_args%%[:+=[]*} ) # Strip everything after other optspecs
+  comp_args=( ${comp_args##[^-]*}   ) # Remove non-options
+  comp_args=( ${(f)"$( print -rl - $comp_args | sort -u )"} )
+
+  (( $#help_args )) || {
+      print -r >&2 'Failed to get help_args'
+      return 1
+  }
+  (( $#comp_args )) || {
+      print -r >&2 'Failed to get comp_args'
+      return 1
+  }
+
+  diff="$(
+    diff -U2 \
+        --label '`bitbake --help`' \
+        --label '`_bitbake (bitbake)`' \
+        =( print -rl - $help_args ) =( print -rl - $comp_args )
+  )"
+
+  (( $#diff )) && {
+      printf >&2 '%s\n' 'zsh completion options differ from `--help` options:'
+      printf >&2 '%s\n' $diff
+      return 1
+  }
+
+  printf 'OK\n'
+  return 0
+}
+
+function compare_devtool()
+{
+  # subcommand can take:
+  # * none: compare devtool's --help
+  # * subcommands: in this case compare the list of subcommands
+  # * <subcommand>: compare devtool <subcommand> --help
+  local subcommand="$1"
+
+  local diff
+  local _bitbake="_bitbake"  # local path
+  local help_parser="ci/parse-help"
+  local -a help_args comp_args
+
+  sanity_checks devtool "$_bitbake"
+  local devtool="$(which devtool)"
+
+  print -rl - "Comparing options:" "-$devtool" "+$_bitbake (devtool) [$subcommand]"
+
+  if [[ "$subcommand" == "none" ]]; then
+    help_args=( ${(f)"$(
+        COLUMNS=7000 $devtool --help |
+        $help_parser --parse-mode devtool --print-opts |
+        sort -u
+    )"} )
+
+    comp_args=( ${(f)"$( get_comp_args $_bitbake devtool )"} )
+    comp_args=( ${comp_args#\(*\)}    ) # Strip excluded options
+    comp_args=( ${comp_args#\*}       ) # Strip repetition indicator
+    comp_args=( ${comp_args%%-[:[]*}  ) # Strip everything after -optname-
+    comp_args=( ${comp_args%%[:+=[]*} ) # Strip everything after other optspecs
+    comp_args=( ${comp_args##[^-]*}   ) # Remove non-options
+    comp_args=( ${(f)"$( print -rl - $comp_args | sort -u )"} )
+
+  elif [[ "$subcommand" == "subcommands" ]]; then
+    # Comparing devtool $subcommand --help's output
+    help_args=( ${(f)"$(
+        COLUMNS=7000 $devtool --help |
+        $help_parser --parse-mode devtool --print-subcommands |
+        sort -u
+    )"} )
+
+    comp_args=( ${(f)"$( get_comp_args $_bitbake devtool subcommands )"} )
+    comp_args=( ${comp_args%:*} ) # Strip repetition indicator
+    comp_args=( ${(f)"$( print -rl - $comp_args | sort -u )"} )
+
+  else
+    help_args=( ${(f)"$(
+        COLUMNS=7000 $devtool $subcommand --help |
+        $help_parser --parse-mode devtool.subcommand --print-opts |
+        sort -u
+    )"} )
+
+    comp_args=( ${(f)"$( get_comp_args $_bitbake devtool $subcommand)"} )
+    comp_args=( ${comp_args#\(*\)}    ) # Strip excluded options
+    comp_args=( ${comp_args#\*}       ) # Strip repetition indicator
+    comp_args=( ${comp_args%%-[:[]*}  ) # Strip everything after -optname-
+    comp_args=( ${comp_args%%[:+=[]*} ) # Strip everything after other optspecs
+    comp_args=( ${comp_args##[^-]*}   ) # Remove non-options
+    comp_args=( ${(f)"$( print -rl - $comp_args | sort -u )"} )
+  fi
+
+  (( $#help_args )) || {
+      print -r >&2 'Failed to get help_args'
+      return 1
+  }
+  (( $#comp_args )) || {
+      print -r >&2 'Failed to get comp_args'
+      return 1
+  }
+
+  diff="$(
+    diff -U2 \
+        --label '`devtool '$subcommand' --help`' \
+        --label '`_bitbake (devtool) ['$subcommand']`' \
+        =( print -rl - $help_args ) =( print -rl - $comp_args )
+  )"
+
+  (( $#diff )) && {
+      printf >&2 '%s\n' 'zsh completion options differ from `--help` options:'
+      printf >&2 '%s\n' $diff
+      return 1
+  }
+
+  printf 'OK\n'
+  return 0
+}
+
+function main()
+{
+  local tool="$1"
+  local subcommand="${2:-none}"
+
+  compare_$tool "$subcommand"
+}
+
+main "$@"
