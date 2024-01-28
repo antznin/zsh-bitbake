@@ -75,18 +75,18 @@ class HelpParser():
         r"(?P<desc>\S.+)$"         # the description
     )
 
-    # Option with description not on the same line:
+    # Option with description _not_ on the same line:
     #
     # --srcrev SRCREV, -S SRCREV
     #                   Source revision to fetch...
     #
     opts_re_nodesc = re.compile(
-        r"^  (?P<opt1>[a-zA-Z-]+)"    # the first opt
-        r"( (?P<opt_arg>[A-Z_]+))?"   # the first option argument (optional)
-        r"( \[[A-Z_]+ \.\.\.\])?"     # additional first option arguments (optional)
-        r"(, (?P<opt2>[a-zA-Z-]+))?"  # the second opt (optional)
-        r"( [A-Z_]+)?"                # the second option argument (optional)
-        r"( \[[A-Z_]+ \.\.\.\])?$"    # additional second option arguments (optional)
+        r"^  (?P<opt1>-[a-zA-Z-]+)"    # the first opt
+        r"( (?P<opt_arg>[A-Z_]+))?"    # the first option argument (optional)
+        r"( \[[A-Z_]+ \.\.\.\])?"      # additional first option arguments (optional)
+        r"(, (?P<opt2>-[a-zA-Z-]+))?"  # the second opt (optional)
+        r"( [A-Z_]+)?"                 # the second option argument (optional)
+        r"( \[[A-Z_]+ \.\.\.\])?$"     # additional second option arguments (optional)
     )
 
     # Option with description on the same line:
@@ -94,13 +94,13 @@ class HelpParser():
     #   -h, --help            show this help message and exit
     #
     opts_re_desc = re.compile(
-        r"^  (?P<opt1>[a-zA-Z-]+)"    # the first opt
-        r"(( (?P<opt_arg>[A-Z_]+))"   # the first option argument (optional)
-        r"|( \.\.\.))?"               # remainder (optional)
-        r"(, (?P<opt2>[a-zA-Z-]+))?"  # the second opt (optional)
-        r"( [A-Z_]+)?"                # the second option argument (optional)
-        r"\s+"                        # spaces between opts and description
-        r"(?P<desc>\S.+)$"            # the description
+        r"^  (?P<opt1>-[a-zA-Z-]+)"    # the first opt
+        r"(( (?P<opt_arg>[A-Z_]+))"    # the first option argument (optional)
+        r"|( \.\.\.))?"                # remainder (optional)
+        r"(, (?P<opt2>-[a-zA-Z-]+))?"  # the second opt (optional)
+        r"( [A-Z_]+)?"                 # the second option argument (optional)
+        r"\s+"                         # spaces between opts and description
+        r"(?P<desc>\S.+)$"             # the description
     )
 
     def parse_help(self, help_txt: str) -> None:
@@ -132,6 +132,54 @@ class HelpParser():
         for subc in self.subcommands:
             out += f"{subc.name}\n"
         return out.strip()
+
+
+class BitbakeHelpParser(HelpParser):
+
+    def parse_help(self, help_txt: str) -> None:
+
+        desc_next_line = False
+        prev_opt = Option()
+
+        for line in help_txt.splitlines():
+
+            m_desc = re.match(self.opts_re_desc, line)
+            m_nodesc = re.match(self.opts_re_nodesc, line)
+
+            if m_nodesc:
+                m = m_nodesc
+            else:
+                m = m_desc
+
+            if desc_next_line:
+                desc = line.strip()
+                prev_opt.desc = desc[0].lower() + desc[1:]
+                desc_next_line = False
+
+            elif m:
+                opt = Option()
+                desc = ""
+                if m_desc and not m_nodesc:
+                    desc = m.group("desc")
+                if desc:
+                    opt.desc = desc[0].lower() + desc[1:]
+                opt.arg = m.group("opt_arg")
+                opt1, opt2 = m.group("opt1"), m.group("opt2")
+                if opt2 is not None:
+                    if opt2.startswith("--"):
+                        opt.name = opt1
+                        opt.alt_name = opt2
+                    else:
+                        opt.name = opt2
+                        opt.alt_name = opt1
+                else:
+                    opt.name = opt1
+                self.opts += [opt]
+                if m_nodesc is not None:
+                    prev_opt = opt
+                    desc_next_line = True
+
+            m_desc, m_nodesc = None, None
 
 
 class DevtoolHelpParser(HelpParser):
@@ -170,7 +218,6 @@ class DevtoolHelpParser(HelpParser):
                     self.subcommands += [Subcommand(name=m.group("name"),
                                                     desc=m.group("desc"))]
 
-
             if in_opts:
                 m_desc = re.match(self.opts_re_desc, line)
                 m_nodesc = re.match(self.opts_re_nodesc, line)
@@ -208,6 +255,7 @@ class DevtoolHelpParser(HelpParser):
                         desc_next_line = True
 
                 m_desc, m_nodesc = None, None
+
 
 class DevtoolSubcommandHelpParser(HelpParser):
 
@@ -309,6 +357,7 @@ def parse_arguments() -> argparse.ArgumentParser:
 
     parser.add_argument("--parse-mode",
                         choices=[
+                            "bitbake",
                             "devtool",
                             "devtool.subcommand",
                         ],
@@ -337,6 +386,9 @@ def main():
 
     parser = HelpParser()
 
+    if pargs.mode == "bitbake":
+        parser = BitbakeHelpParser()
+
     if pargs.mode == "devtool":
         parser = DevtoolHelpParser()
 
@@ -345,15 +397,14 @@ def main():
 
     parser.parse_help(help_txt)
 
-    if parser is not None:
-        if pargs.print_opts_zsh:
-            print_opts_zsh(parser.zsh_args, pargs.indent)
+    if pargs.print_opts_zsh:
+        print_opts_zsh(parser.zsh_args, pargs.indent)
 
-        if pargs.print_opts:
-            print(parser.opts_oneperline)
+    if pargs.print_opts:
+        print(parser.opts_oneperline)
 
-        if pargs.print_subcommands:
-            print(parser.subc_oneperline)
+    if pargs.print_subcommands:
+        print(parser.subc_oneperline)
 
 
 if __name__ == "__main__":
