@@ -28,32 +28,24 @@ jobs:
           zsh
         sudo locale-gen en_US.UTF-8
 
-    - name: Cache bitbake
+    - name: Restore bitbake
       id: cache-bitbake
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: bitbake
-        key: bitbake-git-${{ hashFiles('**/bitbake-tag') }}
-        restore-keys: bitbake-git-
+        key: bitbake-git-
 
-    - name: Fresh clone bitbake
-      if: steps.cache-bitbake.outputs.cache-hit != 'true'
-      run: git clone --single-branch $BITBAKE_URL bitbake
-
-    - name: Cache oecore
+    - name: Restore oecore
       id: cache-oecore
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: oecore
-        key: oecore-git-${{ hashFiles('**/oecore-tag') }}
-        restore-keys: oecore-git-
-
-    - name: Fresh clone oecore
-      if: steps.cache-oecore.outputs.cache-hit != 'true'
-      run: git clone --single-branch $OECORE_URL oecore
+        key: oecore-git-
 
     - name: Checkout on last release
       run: |
+        [ ! -d bitbake ] && git clone --single-branch $BITBAKE_URL bitbake
+        [ ! -d oecore ] && git clone --single-branch $OECORE_URL oecore
         for project in bitbake oecore; do
           git -C $project fetch
           git -C $project describe --tags --match="yocto-*.*" --exclude="yocto-*.*.*" --abbrev=0 >${project}-tag
@@ -62,3 +54,15 @@ jobs:
 
     - name: Test zsh shell completions
       run: ci/run
+
+    - name: Save bitbake
+      uses: actions/cache/save@v4
+      with:
+        path: bitbake
+        key: bitbake-git-${{ hashFiles('**/bitbake-tag') }}
+
+    - name: Save oecore
+      uses: actions/cache/save@v4
+      with:
+        path: oecore
+        key: oecore-git-${{ hashFiles('**/oecore-tag') }}
