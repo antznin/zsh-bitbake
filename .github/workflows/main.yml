@@ -33,7 +33,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: bitbake
-        key: bitbake-git-${{ hashFiles('bitbake-tag') }}
+        key: bitbake-git-${{ hashFiles('**/bitbake-tag') }}
         restore-keys: bitbake-git-
 
     - name: Fresh clone bitbake
@@ -45,7 +45,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: oecore
-        key: oecore-git-${{ hashFiles('oecore-tag') }}
+        key: oecore-git-${{ hashFiles('**/oecore-tag') }}
         restore-keys: oecore-git-
 
     - name: Fresh clone oecore
