@@ -33,7 +33,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: bitbake
-        key: ${{ runner.os }}-bitbake-git
+        key: bitbake-git-${{ hashFiles('bitbake-tag') }}
+        restore-keys: bitbake-git-
 
     - name: Fresh clone bitbake
       if: steps.cache-bitbake.outputs.cache-hit != 'true'
@@ -44,16 +45,20 @@ jobs:
       uses: actions/cache@v4
       with:
         path: oecore
-        key: ${{ runner.os }}-oecore-git
+        key: oecore-git-${{ hashFiles('oecore-tag') }}
+        restore-keys: oecore-git-
 
     - name: Fresh clone oecore
       if: steps.cache-oecore.outputs.cache-hit != 'true'
       run: git clone --single-branch $OECORE_URL oecore
 
-    - name: Update repositories
+    - name: Checkout on last release
       run: |
-        git -C bitbake pull origin master
-        git -C oecore pull origin master
+        for project in bitbake oecore; do
+          git -C $project fetch
+          git -C $project describe --tags --match="yocto-*" --abbrev=0 >${project}-tag
+          git -C $project checkout $(<${project}-tag)
+        done
 
     - name: Test zsh shell completions
       run: ci/run
