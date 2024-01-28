@@ -183,7 +183,7 @@ _bitbake()
     '(--status-only)'--status-only'[check the status of the remote bitbake server]'
     '(--server-only)'--server-only'[run bitbake without a ui]'
     '(-r,--read)'{-r+,--read=}'[read the specified file before bitbake.conf]: :_files'
-    '(-R,--postread)'{-R+,--post-read=}'[read the specified file after bitbake.conf]: :_files'
+    '(-R,--postread)'{-R+,--postread=}'[read the specified file after bitbake.conf]: :_files'
     '(-I,--ignore-deps)'{-I+,--ignore-deps=}'[assume these dependencies are already provided]: :'
 
     '*: :__recipes'
@@ -234,6 +234,9 @@ __devtool_subcommand ()
         '(--src-subdir)'--src-subdir='[specify subdirectory within source tree to use]'
         '(--mirrors)'--mirrors'[enable PREMIRRORS and MIRRORS for source tree fetching]'
         '(-p --provides)'{-p+,--provides=}'[specify an alias for the item provided by recipe]'
+        '(-f --fetch)'{-f+,--fetch=}'[(deprecated) fetch the specified URI and extract to create source tree]'
+        '(--no-pypi)'--no-pypi'[do not inherit pypi class]'
+
 
         ':recipename:'
         ':srctree:_directories'
@@ -278,8 +281,8 @@ __devtool_subcommand ()
     (create-workspace)
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
-        '(--layerseries)'--layerseries'[layer series the workspace should be set to be compatible with]'
         '(--create-only)'--create-only'[only create the workspace layer don'\''t alter configuration]'
+        '(--layerseries)'--layerseries='[layer series the workspace should be set to be compatible with]'
 
         ': :_directories'  # layerpath
       )
@@ -305,6 +308,7 @@ __devtool_subcommand ()
     (edit-recipe)
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
+        '(-a --any-recipe)'{-a,--any-recipe}'[does nothing (exists for backwards-compatibility)]'
 
         ': :__recipes'
       )
@@ -332,6 +336,7 @@ __devtool_subcommand ()
     (find-recipe)
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
+        '(-a --any-recipe)'{-a,--any-recipe}'[does nothing (exists for backwards-compatibility)]'
 
         ': :__recipes'
       )
@@ -541,7 +546,6 @@ _devtool()
   # Global arguments, not command specific.
   args=(
     '(: * -)'{-h,--help}'[display help information]'
-    '(: * -)'--version'[display version information]'
     '(--basepath)'--basepath='[base directory of sdk or build directory]: :_directories'
     '(--bbpath)'--bbpath='[explicitly specify the BBPATH]:bbpath:'
     '(-d,--debug -q --quiet)'{-d,--debug}'[enable debug output]'

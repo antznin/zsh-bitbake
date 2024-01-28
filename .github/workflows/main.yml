@@ -56,7 +56,7 @@ jobs:
       run: |
         for project in bitbake oecore; do
           git -C $project fetch
-          git -C $project describe --tags --match="yocto-*" --abbrev=0 >${project}-tag
+          git -C $project describe --tags --match="yocto-*.*" --exclude="yocto-*.*.*" --abbrev=0 >${project}-tag
           git -C $project checkout $(<${project}-tag)
         done
 
