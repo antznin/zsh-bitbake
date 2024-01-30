@@ -316,7 +316,7 @@ __devtool_subcommand ()
     (export)
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
-        '(-f --file)'{-f+,--file=}'[output archive file name]'
+        '(-f --file)'{-f+,--file=}'[output archive file name]: :_files'
         '(-o --overwrite)'{-o,--overwrite}'[overwrite previous export tar archive]'
         '*'{-i+,--include=}'[include recipes into the tar archive]: :__recipes'
         '*'{-e+,--exclude=}'[exclude recipes into the tar archive]: :__recipes'
