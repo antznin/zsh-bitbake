@@ -3,8 +3,8 @@
 ![example workflow](https://github.com/antznin/zsh-bitbake/actions/workflows/main.yml/badge.svg)
 
 This plugins adds completion for the
-[`bitbake`](https://git.openembedded.org/bitbake) command line tool in the Z
-shell.
+[`bitbake`](https://git.openembedded.org/bitbake) and `devtool` command line
+tool in the Z shell.
 
 ## Installation
 
@@ -65,6 +65,7 @@ unmet):
 * Commands `bitbake-layers`, `sed`, and `tail` exist in the current shell.
 
 This creates a file `$BUILDDIR/.recipe-cache` that stores the list of recipes.
-This file is not automatically updated if recipes are added or removed in the
-current environment (it would be too slow and costly). File must be removed to
-regenerate it on the next completion.
+Recipes are read from this file to enable completion. This file is not
+automatically updated if recipes are added or removed in the current environment
+(it would be too slow and costly). File must be removed to be regenerated on the
+next completion.
