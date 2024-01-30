@@ -1,5 +1,7 @@
 # Zsh bitbake completion
 
+![example workflow](https://github.com/antznin/zsh-bitbake/actions/workflows/main.yml/badge.svg)
+
 This plugins adds completion for the
 [`bitbake`](https://git.openembedded.org/bitbake) command line tool in the Z
 shell.
