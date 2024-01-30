@@ -104,10 +104,17 @@ class HelpParser():
     )
 
     def parse_help(self, help_txt: str) -> None:
+        """
+        Read a --help command output and parse arguments and options.
+        This populates self.opts, self.args or self.subcommands.
+        """
         raise NotImplementedError("Do not call parse_help from Parser directly.")
 
     @property
     def zsh_args(self):
+        """
+        Print a zsh-completion formatted list of arguments and options.
+        """
         out = ""
         for opt in self.opts:
             out += opt.zsh_arg + "\n"
@@ -119,6 +126,10 @@ class HelpParser():
 
     @property
     def opts_oneperline(self):
+        """
+        Print options in self.opts, one option per line.
+        """
+
         out = ""
         for opt in self.opts:
             out += f"{opt.name}\n"
@@ -128,6 +139,10 @@ class HelpParser():
 
     @property
     def subc_oneperline(self):
+        """
+        Print subcommands in self.subcommands, one subcommand per line.
+        """
+
         out = ""
         for subc in self.subcommands:
             out += f"{subc.name}\n"
@@ -260,11 +275,6 @@ class DevtoolHelpParser(HelpParser):
 class DevtoolSubcommandHelpParser(HelpParser):
 
     def parse_help(self, help_txt: str) -> None:
-        """
-        Parse a devtool subcommand's help (ex.: devtool add --help).
-        Separated in two sections: "arguments" and "options" that we parse
-        differently (in_args/in_opts).
-        """
 
         in_args = False
         in_opts = False
@@ -328,6 +338,10 @@ class DevtoolSubcommandHelpParser(HelpParser):
 
 
 def print_opts_zsh(text: str, indent: int = 0):
+    """
+    Helper function to call a Parser's zsh_args + some left indentation, for
+    easier copy-pasting in completion file.
+    """
     for line in text.splitlines():
         print(" " * indent + line)
 
