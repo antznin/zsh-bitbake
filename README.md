@@ -13,7 +13,7 @@ tool in the Z shell.
   * Clone this repository in `$HOME/.oh-my-zsh/custom/plugins/`:
 
     ```shell
-    git clone https://github.com/antznin/zsh-bitbake.git "$HOME"/.oh-my-zsh/custom/plugins/zsh-bitbake
+    git clone https://github.com/antznin/zsh-bitbake.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/plugins/zsh-bitbake
     ```
 
   * Add `zsh-bitbake` to the plugins array in your zshrc file:
