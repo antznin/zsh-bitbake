@@ -48,6 +48,8 @@ __bb_tasks()
     'populate_lic_setscene:writes license information for the recipe that is collected later when the image is constructed (setscene version)'
     'populate_sysroot:copies a subset of files installed by do_install into the sysroot in order to make them available to other recipes'
     'populate_sysroot_setscene:copies a subset of files installed by do_install into the sysroot in order to make them available to other recipes (setscene version)'
+    'populate_sdk:creates the file and directory structure for an SDK'
+    'populate_sdk_ext:creates the file and directory structure for an extensible SDK'
     'prepare_recipe_sysroot:prepare the recipe'\''s sysroot'
     'pydevshell:starts an interactive python shell for development/debugging'
     'unpack:unpacks the source code into a working directory'
