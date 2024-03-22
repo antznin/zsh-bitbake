@@ -45,7 +45,7 @@ jobs:
             --exclude="yocto-*.*.*" \
             --abbrev=0 \
             FETCH_HEAD >${project}-tag
-          git -C $project checkout $(<${project}-tag)
+          git -C $project checkout $(cat ${project}-tag)
         done
 
     - name: Test zsh shell completions
