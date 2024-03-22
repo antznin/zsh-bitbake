@@ -245,7 +245,6 @@ __devtool_subcommand ()
         '(--mirrors)'--mirrors'[enable PREMIRRORS and MIRRORS for source tree fetching]'
         '(-p --provides)'{-p+,--provides=}'[specify an alias for the item provided by recipe]'
         '(-f --fetch)'{-f+,--fetch=}'[(deprecated) fetch the specified URI and extract to create source tree]'
-        '(--no-pypi)'--no-pypi'[do not inherit pypi class]'
 
 
         ':recipename:'
@@ -292,7 +291,6 @@ __devtool_subcommand ()
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
         '(--create-only)'--create-only'[only create the workspace layer don'\''t alter configuration]'
-        '(--layerseries)'--layerseries='[layer series the workspace should be set to be compatible with]'
 
         ': :_directories'  # layerpath
       )
