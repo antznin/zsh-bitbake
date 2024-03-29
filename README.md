@@ -1,6 +1,7 @@
 # Zsh bitbake completion
 
-![example workflow](https://github.com/antznin/zsh-bitbake/actions/workflows/main.yml/badge.svg)
+![CI Badge](https://github.com/antznin/zsh-bitbake/actions/workflows/main.yml/badge.svg)
+![GitHub Latest Release)](https://img.shields.io/github/v/release/antznin/zsh-bitbake?logo=github)
 
 This plugins adds completion for the
 [`bitbake`](https://git.openembedded.org/bitbake) and `devtool` command line
