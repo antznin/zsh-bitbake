@@ -6,7 +6,7 @@ on:
     - main
     - ci
   schedule:
-  - cron: '00 01 * * *'
+  - cron: '0 1 * * 1,3,5'
 
 jobs:
   test-complete:
