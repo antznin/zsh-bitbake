@@ -38,13 +38,13 @@ jobs:
         [ ! -d bitbake ] && git clone --single-branch $BITBAKE_URL bitbake
         [ ! -d oecore ] && git clone --single-branch $OECORE_URL oecore
         for project in bitbake oecore; do
-          git -C $project fetch
-          git -C $project describe \
-            --tags \
-            --match="yocto-*.*" \
-            --exclude="yocto-*.*.*" \
-            --abbrev=0 \
-            FETCH_HEAD >${project}-tag
+          git -C $project fetch --tags
+          git -C $project for-each-ref \
+            --format="%(refname)" \
+            "refs/tags/yocto-*.*" \
+            | sort --version-sort \
+            | tail -1 >${project}-tag
+          echo "${project} checked out on $(cat ${project}-tag)"
           git -C $project checkout $(cat ${project}-tag)
         done
 
