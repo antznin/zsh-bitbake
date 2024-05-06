@@ -365,6 +365,29 @@ __devtool_subcommand ()
         ': :_directories'  # destination
       )
       ;;
+    (ide-sdk)
+      args+=(
+        '(-h --help)'{-h,--help}'[print usage]'
+        '(-m --mode)'{-m+,--mode=}'[SDK type]: :(modified shared)'
+        '(-i --ide)'{-i+,--ide=}'[IDE to setup configuration for]: :(none code)'
+        '(-t --target)'{-t+,--target=}'[live target machine running an ssh server (user@hostname)]'
+        '(-G --gdbserver-port-start)'{-G+,--gdbserver-port-start=}'[port where gdbserver is listening]'
+        '(-c --no-host-check)'{-c,--no-host-check}'[disable ssh host key checking]'
+        '(-e --ssh-exec)'{-e+,--ssh-exec=}'[executable to use in place of ssh]'
+        '(-P --port)'{-P+,--port=}'[specify ssh port to use for connection to the target]'
+        '(-I --key)'{-I+,--key=}'[specify ssh private key for connection to the target]'
+        '(--skip-bitbake)'--skip-bitbake'[skip calling bitbake to update the SDK]'
+        '(-k --bitbake-k)'{-k,--bitbake-k}'[pass -k parameter to bitbake]'
+        '(--no-strip)'--no-strip'[do not strip executables prior to deploy]'
+        '(-n --dry-run)'{-n,--dry-run}'[list files to be undeployed only]'
+        '(-s --show-status)'{-s,--show-status}'[show progress/status output]'
+        '(-p --no-preserve)'{-p,--no-preserve}'[do not preserve existing files]'
+        '(--no-check-space)'--no-check-space'[do not check for available space before deploying]'
+        '(--debug-build-config)'--debug-build-config'[use debug build flags, for example set CMAKE_BUILD_TYPE=Debug]'
+
+        ': :__recipes'
+      )
+      ;;
     (import)
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
@@ -523,6 +546,7 @@ __devtool_commands ()
     'extract:extract the source for an existing recipe'
     'find-recipe:find a recipe file'
     'finish:finish working on a recipe in your workspace'
+    'ide-sdk:setup the SDK and configure the IDE'
     'import:import exported tar archive into workspace'
     'latest-version:report the latest version of an existing recipe'
     'menuconfig:alter build-time configuration for a recipe'
