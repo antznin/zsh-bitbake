@@ -83,9 +83,11 @@ class HelpParser():
     opts_re_nodesc = re.compile(
         r"^  (?P<opt1>-[a-zA-Z-]+)"    # the first opt
         r"( (?P<opt_arg>[A-Z_]+))?"    # the first option argument (optional)
+        r"( \{(?P<opt_args>\S+)\})?"   # the first option choices in curly braces (optional)
         r"( \[[A-Z_]+ \.\.\.\])?"      # additional first option arguments (optional)
         r"(, (?P<opt2>-[a-zA-Z-]+))?"  # the second opt (optional)
         r"( [A-Z_]+)?"                 # the second option argument (optional)
+        r"( \{\S+\})?"                 # the second option choices in curly braces (optional)
         r"( \[[A-Z_]+ \.\.\.\])?$"     # additional second option arguments (optional)
     )
 
@@ -178,7 +180,10 @@ class BitbakeHelpParser(HelpParser):
                     desc = m.group("desc")
                 if desc:
                     opt.desc = desc[0].lower() + desc[1:]
-                opt.arg = m.group("opt_arg")
+                arg = m.groupdict().get('opt_arg') \
+                    or m.groupdict().get('opt_args')
+                if arg:
+                    opt.arg = arg
                 opt1, opt2 = m.group("opt1"), m.group("opt2")
                 if opt2 is not None:
                     if opt2.startswith("--"):
@@ -253,7 +258,10 @@ class DevtoolHelpParser(HelpParser):
                         desc = m.group("desc")
                     if desc:
                         opt.desc = desc[0].lower() + desc[1:]
-                    opt.arg = m.group("opt_arg")
+                    arg = m.groupdict().get('opt_arg') \
+                        or m.groupdict().get('opt_args')
+                    if arg:
+                        opt.arg = arg
                     opt1, opt2 = m.group("opt1"), m.group("opt2")
                     if opt2 is not None:
                         if opt2.startswith("--"):
@@ -318,7 +326,10 @@ class DevtoolSubcommandHelpParser(HelpParser):
                         desc = m.group("desc")
                     if desc:
                         opt.desc = desc[0].lower() + desc[1:]
-                    opt.arg = m.group("opt_arg")
+                    arg = m.groupdict().get('opt_arg') \
+                        or m.groupdict().get('opt_args')
+                    if arg:
+                        opt.arg = arg
                     opt1, opt2 = m.group("opt1"), m.group("opt2")
                     if opt2 is not None:
                         if opt2.startswith("--"):
