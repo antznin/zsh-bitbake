@@ -5,7 +5,7 @@
 
 This plugins adds completion for the
 [`bitbake`](https://git.openembedded.org/bitbake) and `devtool` command line
-tool in the Z shell.
+tools in the Z shell.
 
 ## Installation
 
