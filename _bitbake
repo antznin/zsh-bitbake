@@ -108,6 +108,33 @@ __recipes()
   _describe -t _recipes "Recipes in current environment" _recipes
 }
 
+# Recipes local to devtool workspace.
+__recipes_workspace()
+{
+  local -a _recipes
+
+  if [ -n "$ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION" ]; then
+    return 0
+  fi
+
+  if [ ! -d "$BUILDDIR/" ]; then
+    return 0
+  fi
+
+  if ! command -v find >/dev/null; then
+    return 0
+  fi
+
+  _recipes+=(
+    $(find "$BUILDDIR"/workspace/sources \
+      -maxdepth 1 \
+      -mindepth 1 \
+      -exec basename "{}" \;)
+  )
+
+  _describe -t _recipes "Recipes in current workspace" _recipes
+}
+
 __debug_domains() {
   local -a _debug_domains
 
@@ -267,7 +294,7 @@ __devtool_subcommand ()
         '(-s --disable-parallel-make)'{-s,--disable-parallel-make}'[disable make parallelism]'
         '(-c --clean)'{-c,--clean}'[clean up recipe building results]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
       )
       ;;
     (check-upgrade-status)
@@ -285,7 +312,7 @@ __devtool_subcommand ()
         '(-n --no-header)'{-n,--no-header}'[disable explanatory header text]'
         '(: - *)'--arg'[pass remaining arguments to configure script instead of --help]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
       )
       ;;
     (create-workspace)
@@ -311,7 +338,7 @@ __devtool_subcommand ()
         '(-S --strip --no-strip)'{-S,--strip}'[strip executables prior to deploying]'
         '(--no-strip -S --strip)'--no-strip'[don'\''t strip executables prior to deploy]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
         ': :_hosts'  # target
       )
       ;;
@@ -363,7 +390,7 @@ __devtool_subcommand ()
         '(-N --dry-run)'{-N,--dry-run}'[just report changes instead of writing them]'
         '(--force-patch-refresh)'--force-patch-refresh'[update patches in layer even if they haven'\''t been modified]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
         ': :_directories'  # destination
       )
       ;;
@@ -387,7 +414,7 @@ __devtool_subcommand ()
         '(--no-check-space)'--no-check-space'[do not check for available space before deploying]'
         '(--debug-build-config)'--debug-build-config'[use debug build flags, for example set CMAKE_BUILD_TYPE=Debug]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
       )
       ;;
     (import)
@@ -409,7 +436,7 @@ __devtool_subcommand ()
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
       )
       ;;
     (modify)
@@ -434,7 +461,7 @@ __devtool_subcommand ()
         '(-V --version)'{-V+,--version=}'[change the version (version in the recipe file name)]'
         '(-s --no-srctree)'{-s,--no-srctree}'[don'\''t rename the source tree directory]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
         ':newname:'
       )
       ;;
@@ -445,7 +472,7 @@ __devtool_subcommand ()
         '(-n --no-clean)'{-n,--no-clean}'[don'\''t clean the sysroot to remove recipe output]'
         '(-r --remove-work)'{-r,--remove-work}'[clean the sources directory along with append]'
 
-        ': :__recipes'
+        '*: :__recipes_workspace'
       )
       ;;
     (search)
@@ -481,7 +508,7 @@ __devtool_subcommand ()
         '(-P --port)'{-P+,--port=}'[port to use for connection to the target]'
         '(-I --key)'{-I+,--key=}'[ssh private key for connection to the target]'
 
-        ': :__recipes'
+        ': :__recipes_workspace'
         ': :_hosts'  # target
       )
       ;;
@@ -497,7 +524,7 @@ __devtool_subcommand ()
         '(-N --dry-run)'{-N,--dry-run}'[just report changes instead of writing them]'
         '(--force-patch-refresh)'--force-patch-refresh'[update patches in the layer even if unmodified]'
 
-        ': :__recipes'
+        ': :__recipes_)workspace'
       )
       ;;
     (upgrade)
