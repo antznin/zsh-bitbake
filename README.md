@@ -23,8 +23,7 @@ tools in the Z shell.
     plugins=(... zsh-bitbake)
     ```
 
-* [Arch User Repository](https://wiki.archlinux.org/title/Arch_User_Repository):
-  `pacman -S zsh-bitbake`.
+* [Arch User Repository](https://wiki.archlinux.org/title/Arch_User_Repository)
 
 * To install the plugin separately, clone this repository and source
   `bitbake.plugin.zsh` in your zshrc. Then add this repository's path to the
