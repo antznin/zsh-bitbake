@@ -80,6 +80,26 @@ __bb_tasks()
 __recipes()
 {
   local -a _recipes
+  local virtual_recipes=(
+    virtual/bootloader
+    virtual/crypt
+    virtual/dtb
+    virtual/gettext
+    virtual/kernel
+    virtual/libc
+    virtual/libgl
+    virtual/libiconv
+    virtual/libintl
+    virtual/librpc
+    virtual/libsdl2
+    virtual/libx11
+    virtual/make
+    virtual/mesa
+    virtual/perf
+    virtual/update-alternatives
+    virtual/x-terminal-emulator
+    virtual/xserver
+  )
 
   if [ -n "$ZSH_BITBAKE_DISABLE_RECIPE_COMPLETION" ]; then
     return 0
@@ -104,6 +124,9 @@ __recipes()
       _recipes+=( "$recipe" )
     done < "$recipe_cache_path"
   fi
+
+  # Add the common virtual/* providers.
+  _recipes+=( ${virtual_recipes[*]} )
 
   _describe -t _recipes "Recipes in current environment" _recipes
 }
