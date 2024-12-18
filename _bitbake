@@ -547,7 +547,7 @@ __devtool_subcommand ()
         '(-N --dry-run)'{-N,--dry-run}'[just report changes instead of writing them]'
         '(--force-patch-refresh)'--force-patch-refresh'[update patches in the layer even if unmodified]'
 
-        ': :__recipes_)workspace'
+        ': :__recipes_workspace'
       )
       ;;
     (upgrade)
