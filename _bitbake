@@ -59,8 +59,8 @@ __bb_tasks()
   # Add kernel-specific tasks to the completion when matching kernel_regexp.
   # Add kbuild tasks to the completion when matching kbuild_regexp.
   local kernel_sub="linux-.*"
-  local kernel_regexp="^${kernel_sub}"
-  local kbuild_regexp="^${kernel_sub}|^busybox$|^u-boot-.*"
+  local kernel_regexp="^${kernel_sub}|^virtual/kernel$"
+  local kbuild_regexp="^${kernel_sub}|^busybox$|^u-boot-.*|^virtual/kernel$|^virtual/bootloader$"
   if [[ ${#line[@]} == 1 ]] && [[ $line =~ $kbuild_regexp ]]; then
     _bb_tasks+=(
       'menuconfig:runs '\''make menuconfig'\'
