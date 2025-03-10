@@ -435,7 +435,6 @@ __devtool_subcommand ()
         '(-s --show-status)'{-s,--show-status}'[show progress/status output]'
         '(-p --no-preserve)'{-p,--no-preserve}'[do not preserve existing files]'
         '(--no-check-space)'--no-check-space'[do not check for available space before deploying]'
-        '(--debug-build-config)'--debug-build-config'[use debug build flags, for example set CMAKE_BUILD_TYPE=Debug]'
 
         ': :__recipes_workspace'
       )
@@ -473,6 +472,7 @@ __devtool_subcommand ()
         '(-b --branch)'{-b+,--branch=}'[name for development branch to checkout]'
         '(-O --no-overrides)'{-O,--no-overrides}'[don'\''t create branches for other override configurations]'
         '(--keep-temp)'--keep-temp'[keep temporary directory (for debugging)]'
+        '(--debug-build)'--debug-build'[Add DEBUG_BUILD = "1" to the modified recipe]'
 
         ': :__recipes'
         ': :_directories'  # srctree
