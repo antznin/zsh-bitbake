@@ -15,7 +15,7 @@ main() {
 
   $test_complete bitbake || ret=1
 
-  for tool in bitbake-layers; do
+  for tool in devtool bitbake-layers; do
 
     $test_complete $tool || ret=1
     $test_complete $tool subcommands || ret=1
