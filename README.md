@@ -5,7 +5,11 @@
 
 This plugins adds completion for the
 [`bitbake`](https://git.openembedded.org/bitbake) command line tool in Zsh, but
-also for `devtool` and `bitbake-layers`.
+also for:
+
+- `devtool`
+- `bitbake-layers`
+- and `bitbake-config-build`
 
 ## Installation
 
