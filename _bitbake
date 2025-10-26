@@ -1,6 +1,8 @@
-#compdef bitbake devtool bitbake-layers
+#compdef bitbake devtool bitbake-layers bitbake-config-build
 #
-# zsh completion function for bitbake, devtool and bitbake-layers
+# zsh completion function for bitbake, devtool, bitbake-layers,
+# bitbake-config-build
+#
 
 # Options passed to _arguments.
 __arguments_opts ()
@@ -668,7 +670,7 @@ _devtool()
 }
 
 #
-# bitbake_layers
+# bitbake-layers
 #
 
 # Returns the list of enabled layers by parsing bblayers.conf
@@ -890,6 +892,137 @@ _bitbake-layers()
     (option-or-argument)
       # Completion for bitbake_layers commands's options.
       __bitbake_layers_subcommand && ret=0
+      ;;
+  esac
+
+  return ret
+}
+
+
+#
+# bitbake-config-build
+#
+
+__bitbake_config_build_subcommand ()
+{
+  integer ret=1
+  local -a args
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    # Override words to artificially fill it with the subcommand from
+    # test-complete.
+    local -a words=( $_COMPLETE_SUBCOMMAND )
+  fi
+
+    args+=(
+      '(-h --help)'{-h,--help}'[print usage]'
+    )
+
+  case "$words[1]" in
+    (disable-all-fragments)
+      args+=(
+        '(--confpath)'--confpath='[configuration file listing fragments (default: conf/toolcfg.conf)]: :_files'
+      )
+      ;;
+    (disable-fragment)
+      args+=(
+        '(--confpath)'--confpath='[configuration file listing fragments (default: conf/toolcfg.conf)]: :_files'
+
+        ':fragmentname:'
+      )
+      ;;
+    (enable-fragment)
+      args+=(
+        '(--confpath)'--confpath='[configuration file listing fragments (default: conf/toolcfg.conf)]: :_files'
+
+        ':fragmentname:'
+      )
+      ;;
+    (list-fragments)
+      args+=(
+        '(--confpath)'--confpath='[configuration file listing fragments (default: conf/toolcfg.conf)]: :_files'
+        '(-v --verbose)'{-v,--verbose}'[print extended descriptions of the fragments]'
+
+        ':fragmentname:'
+      )
+      ;;
+    (show-fragment)
+      args+=(
+        ':fragmentname:'
+      )
+      ;;
+  esac
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    print -rl - $args
+    return 0
+  fi
+
+  _arguments $(__arguments_opts) $args && ret=0
+
+  return ret
+}
+
+__bitbake_config_build_commands ()
+{
+  local -a _bitbake_config_build_commands
+
+  _bitbake_config_build_commands=(
+    'disable-all-fragments:disable all fragments in the local build configuration'
+    'disable-fragment:disable a fragment in the local build configuration'
+    'enable-fragment:enable a fragment in the local build configuration'
+    'list-fragments:list available configuration fragments'
+    'show-fragment:show the content of a fragment'
+  )
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMANDS == 1 ]]; then
+    print -rl - $_bitbake_config_build_commands
+    return 0
+  fi
+
+  _describe -t _bitbake_config_build_commands "bitbake-config-build commands" _bitbake_config_build_commands
+}
+
+_bitbake-config-build()
+{
+  integer ret=1
+  local -a args
+
+  # Global arguments, not command specific.
+  args=(
+    '(: * -)'{-h,--help}'[display help information]'
+    '(-d --debug)'{-d,--debug}'[enable debug output]'
+    '(-q --quiet)'{-q,--quiet}'[only print errors]'
+    '(-F --force)'{-F,--force}'[forced execution]'
+    '(--color)'--color='[colorize output (where COLOR is auto, always, never)]'
+
+    '(-): :->command'
+    '(-)*:: :->option-or-argument'
+  )
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMANDS == 1 ]]; then
+    state="command"
+  elif [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    state="option-or-argument"
+  elif [[ $_COMPLETE_LIST_ARGS == 1 ]]; then
+    print -rl - $args
+    return 0
+  else
+    _arguments $(__arguments_opts) $args && ret=0
+  fi
+
+  case $state in
+    (command)
+      # Completion for bitbake_config_build's commands
+      __bitbake_config_build_commands && ret=0
+      ;;
+    (option-or-argument)
+      # Completion for bitbake_config_build commands's options.
+      __bitbake_config_build_subcommand && ret=0
       ;;
   esac
 
