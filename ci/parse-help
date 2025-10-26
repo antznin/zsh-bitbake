@@ -82,13 +82,13 @@ class HelpParser():
     #
     opts_re_nodesc = re.compile(
         r"^  (?P<opt1>-[a-zA-Z-]+)"    # the first opt
-        r"( (?P<opt_arg>[A-Z_]+))?"    # the first option argument (optional)
+        r"( (?P<opt_arg>[A-Z_:]+))?"   # the first option argument (optional)
         r"( \{(?P<opt_args>\S+)\})?"   # the first option choices in curly braces (optional)
-        r"( \[[A-Z_]+ \.\.\.\])?"      # additional first option arguments (optional)
+        r"( \[[A-Z_:]+ \.\.\.\])?"     # additional first option arguments (optional)
         r"(, (?P<opt2>-[a-zA-Z-]+))?"  # the second opt (optional)
-        r"( [A-Z_]+)?"                 # the second option argument (optional)
+        r"( [A-Z_:]+)?"                # the second option argument (optional)
         r"( \{\S+\})?"                 # the second option choices in curly braces (optional)
-        r"( \[[A-Z_]+ \.\.\.\])?$"     # additional second option arguments (optional)
+        r"( \[[A-Z_:]+ \.\.\.\])?$"    # additional second option arguments (optional)
     )
 
     # Option with description on the same line:
@@ -97,10 +97,10 @@ class HelpParser():
     #
     opts_re_desc = re.compile(
         r"^  (?P<opt1>-[a-zA-Z-]+)"    # the first opt
-        r"(( (?P<opt_arg>[A-Z_]+))"    # the first option argument (optional)
+        r"(( (?P<opt_arg>[A-Z_:]+))"   # the first option argument (optional)
         r"|( \.\.\.))?"                # remainder (optional)
         r"(, (?P<opt2>-[a-zA-Z-]+))?"  # the second opt (optional)
-        r"( [A-Z_]+)?"                 # the second option argument (optional)
+        r"( [A-Z_:]+)?"                # the second option argument (optional)
         r"\s+"                         # spaces between opts and description
         r"(?P<desc>\S.+)$"             # the description
     )
