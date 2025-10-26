@@ -214,6 +214,15 @@ class DevtoolHelpParser(HelpParser):
         r"(?P<desc>\S.+)$"         # the description
     )
 
+    # Long subcommand with description _not_ on the same line:
+    #
+    #   very-long-subcommand
+    #                     Add a new recipe
+    #
+    subc_re2 = re.compile(
+        r"^    (?P<name>[a-z-]+)$"  # the subcommand
+    )
+
     def parse_help(self, help_txt: str) -> None:
 
         in_opts = False
@@ -237,6 +246,10 @@ class DevtoolHelpParser(HelpParser):
                 if m := re.match(self.subc_re, line):
                     self.subcommands += [Subcommand(name=m.group("name"),
                                                     desc=m.group("desc"))]
+                if m := re.match(self.subc_re2, line):
+                    self.subcommands += [Subcommand(name=m.group("name"),
+                                                    desc="notimplemented")]
+
 
             if in_opts:
                 m_desc = re.match(self.opts_re_desc, line)
