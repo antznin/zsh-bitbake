@@ -45,7 +45,7 @@ function sanity_checks()
   local comp_file="$2"
 
   if ! command -v $command >/dev/null; then
-    print "bitbake not found"
+    print "$command not found"
     return 1
   fi
 
@@ -108,32 +108,32 @@ function compare_bitbake()
   return 0
 }
 
-function compare_devtool()
+function compare_subcommands()
 {
   # subcommand can take:
   # * none: compare devtool's --help
   # * subcommands: in this case compare the list of subcommands
   # * <subcommand>: compare devtool <subcommand> --help
   local subcommand="$1"
+  local tool="$2"
 
   local diff
   local _bitbake="_bitbake"  # local path
   local help_parser="ci/parse-help"
   local -a help_args comp_args
 
-  sanity_checks devtool "$_bitbake"
-  local devtool="$(which devtool)"
+  sanity_checks "$tool" "$_bitbake"
 
-  print -rl - "Comparing options:" "-$devtool" "+$_bitbake (devtool) [$subcommand]"
+  print -rl - "Comparing options:" "-$tool" "+$_bitbake ($tool) [$subcommand]"
 
   if [[ "$subcommand" == "none" ]]; then
     help_args=( ${(f)"$(
-        COLUMNS=7000 $devtool --help |
+        COLUMNS=7000 $tool --help |
         $help_parser --parse-mode devtool --print-opts |
         sort -u
     )"} )
 
-    comp_args=( ${(f)"$( get_comp_args $_bitbake devtool )"} )
+    comp_args=( ${(f)"$( get_comp_args $_bitbake $tool )"} )
     comp_args=( ${comp_args#\(*\)}    ) # Strip excluded options
     comp_args=( ${comp_args#\*}       ) # Strip repetition indicator
     comp_args=( ${comp_args%%-[:[]*}  ) # Strip everything after -optname-
@@ -142,25 +142,25 @@ function compare_devtool()
     comp_args=( ${(f)"$( print -rl - $comp_args | sort -u )"} )
 
   elif [[ "$subcommand" == "subcommands" ]]; then
-    # Comparing devtool $subcommand --help's output
+    # Comparing $tool $subcommand --help's output
     help_args=( ${(f)"$(
-        COLUMNS=7000 $devtool --help |
+        COLUMNS=7000 $tool --help |
         $help_parser --parse-mode devtool --print-subcommands |
         sort -u
     )"} )
 
-    comp_args=( ${(f)"$( get_comp_args $_bitbake devtool subcommands )"} )
+    comp_args=( ${(f)"$( get_comp_args $_bitbake $tool subcommands )"} )
     comp_args=( ${comp_args%:*} ) # Strip repetition indicator
     comp_args=( ${(f)"$( print -rl - $comp_args | sort -u )"} )
 
   else
     help_args=( ${(f)"$(
-        COLUMNS=7000 $devtool $subcommand --help |
+        COLUMNS=7000 $tool $subcommand --help |
         $help_parser --parse-mode devtool.subcommand --print-opts |
         sort -u
     )"} )
 
-    comp_args=( ${(f)"$( get_comp_args $_bitbake devtool $subcommand)"} )
+    comp_args=( ${(f)"$( get_comp_args $_bitbake $tool $subcommand)"} )
     comp_args=( ${comp_args#\(*\)}    ) # Strip excluded options
     comp_args=( ${comp_args#\*}       ) # Strip repetition indicator
     comp_args=( ${comp_args%%-[:[]*}  ) # Strip everything after -optname-
@@ -180,8 +180,8 @@ function compare_devtool()
 
   diff="$(
     diff -U2 \
-        --label '`devtool '$subcommand' --help`' \
-        --label '`_bitbake (devtool) ['$subcommand']`' \
+        --label '`'$tool' '$subcommand' --help`' \
+        --label '`_bitbake ($tool) ['$subcommand']`' \
         =( print -rl - $help_args ) =( print -rl - $comp_args )
   )"
 
@@ -200,7 +200,11 @@ function main()
   local tool="$1"
   local subcommand="${2:-none}"
 
-  compare_$tool "$subcommand"
+  if [ "$tool" = "bitbake" ]; then
+    compare_bitbake
+  else
+    compare_subcommands "$subcommand" "$tool"
+  fi
 }
 
 main "$@"

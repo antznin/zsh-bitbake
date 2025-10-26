@@ -14,17 +14,21 @@ main() {
   source "$oe_init" .
 
   $test_complete bitbake || ret=1
-  $test_complete devtool || ret=1
-  $test_complete devtool subcommands || ret=1
 
-  # Fetch subcommands with parse-help
-  mapfile -t subcommands < <(
-    COLUMNS=7000 devtool --help |
-    $help_parser --parse-mode devtool --print-subcommands
-  )
+  for tool in bitbake-layers; do
 
-  for subc in "${subcommands[@]}"; do
-    $test_complete devtool "$subc" || ret=1
+    $test_complete $tool || ret=1
+    $test_complete $tool subcommands || ret=1
+
+    # Fetch subcommands with parse-help
+    mapfile -t subcommands < <(
+      COLUMNS=7000 $tool --help |
+      $help_parser --parse-mode devtool --print-subcommands
+    )
+
+    for subc in "${subcommands[@]}"; do
+      $test_complete $tool "$subc" || ret=1
+    done
   done
 
   exit $ret

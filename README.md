@@ -4,8 +4,8 @@
 ![GitHub Latest Release)](https://img.shields.io/github/v/release/antznin/zsh-bitbake?logo=github)
 
 This plugins adds completion for the
-[`bitbake`](https://git.openembedded.org/bitbake) and `devtool` command line
-tools in the Z shell.
+[`bitbake`](https://git.openembedded.org/bitbake) command line tool in Zsh, but
+also for `devtool` and `bitbake-layers`.
 
 ## Installation
 
@@ -72,3 +72,7 @@ Recipes are read from this file to enable completion. This file is not
 automatically updated if recipes are added or removed in the current environment
 (it would be too slow and costly). File must be removed to be regenerated on the
 next completion.
+
+The completion engine will also try to look in your current `devtool` workspace
+for the recipes managed by devtool. It also looks in your `conf/bblayers.conf`
+and tries to find the currently enabled layers.

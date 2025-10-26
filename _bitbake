@@ -1,6 +1,6 @@
-#compdef bitbake devtool
+#compdef bitbake devtool bitbake-layers
 #
-# zsh completion function for bitbake and devtool
+# zsh completion function for bitbake, devtool and bitbake-layers
 
 # Options passed to _arguments.
 __arguments_opts ()
@@ -661,6 +661,235 @@ _devtool()
     (option-or-argument)
       # Completion for devtool commands's options.
       __devtool_subcommand && ret=0
+      ;;
+  esac
+
+  return ret
+}
+
+#
+# bitbake_layers
+#
+
+# Returns the list of enabled layers by parsing bblayers.conf
+__layers_enabled ()
+{
+  local -a _layers
+
+  if [ ! -f "$BUILDDIR/conf/bblayers.conf" ]; then
+    return 0
+  fi
+
+  if ! command -v find >/dev/null; then
+    return 0
+  fi
+
+  while IFS="" read -r line || [ -n "$line" ]
+  do
+    d=$(echo "$line" | grep -Eo "\/\S+")
+    [ -d "$d" ] && _layers+=( $(realpath --relative-to="$PWD" "$d") )
+  done <"$BUILDDIR/conf/bblayers.conf"
+
+  _describe -t _layers "Layers currently enabled" _layers
+}
+
+__bitbake_layers_subcommand ()
+{
+  integer ret=1
+  local -a args
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    # Override words to artificially fill it with the subcommand from
+    # test-complete.
+    local -a words=( $_COMPLETE_SUBCOMMAND )
+  fi
+
+    args+=(
+      '(-h --help)'{-h,--help}'[print usage]'
+    )
+
+  case "$words[1]" in
+    (add-layer)
+      args+=(
+        ': :_directories'  # layerdir
+      )
+      ;;
+    (create-layer)
+      args+=(
+        '(-a --add-layer)'{-a,--add-layer}'[add the layer to bblayers.conf after creation]'
+        '(-i --layerid)'{-i+,--layerid=}'[layer ID to use in BBFILE_COLLECTIONS, if different from the layerdir basename]'
+        '(-p --priority)'{-p+,--priority=}'[priority of recipes in layer]'
+        '(-e --example-recipe-name)'{-e+,--example-recipe-name=}'[filename of the example recipe]'
+        '(-v --example-recipe-version)'{-v+,--example-recipe-version=}'[version number for the example recipe]'
+
+        ':layerdir:'
+      )
+      ;;
+    (create-layers-setup)
+      args+=(
+        '(-o --output-prefix)'{-o+,--output-prefix=}'[file name prefix for the output files]'
+        '(-w --writer)'{-w+,--writer=}'[choose the output format]'
+        '(--json-only)'--json-only'[write only the layer configuruation in json format]'
+        '(-u --update)'{-u,--update}'[update an existing layer setup json file]'
+        '(-r --use-custom-reference)'{-r+,--use-custom-reference=}'[pair consisting of custom repository:reference to use]'
+
+        ':destdir:'
+      )
+      ;;
+    (flatten)
+      args+=(
+        ': :__layers_enabled'
+      )
+      ;;
+    (layerindex-fetch)
+      args+=(
+        '(-n --show-only)'{-n,--show-only}'[show dependencies and do nothing else]'
+        '(-b --branch)'{-b+,--branch=}'[branch name to fetch]'
+        '(-s --shallow)'{-s,--shallow}'[do only shallow clones (--depth=1)]'
+        '(-i --ignore)'{-i+,--ignore=}'[assume the specified layers do not need to be fetched/added]'
+        '(-f --fetchdir)'{-f+,--fetchdir=}'[directory to fetch the layer(s) into]'
+
+        ':layername:'
+      )
+      ;;
+    (layerindex-show-depends)
+      args+=(
+        '(-b --branch)'{-b+,--branch=}'[branch name to fetch]'
+
+        ':layername:'
+      )
+      ;;
+    (remove-layer)
+      args+=(
+        ': :__layers_enabled'
+      )
+      ;;
+    (save-build-conf)
+      args+=(
+        ':layerpath:'
+        ':templatename:'
+      )
+      ;;
+    (show-appends)
+      args+=(
+        '(--mc)'--mc='[use specified multiconfig]'
+
+        ': :__recipes'
+      )
+      ;;
+    (show-cross-depends)
+      args+=(
+        '(-f --filenames)'{-f,--filenames}'[show full file path]'
+        '(-i --ignore)'{-i+,--ignore=}'[ignore dependencies on items in the specified layer(s)]: :__layers_enabled'
+      )
+      ;;
+    (show-machines)
+      args+=(
+        '(-b --bare)'{-b,--bare}'[output just the machine names, not the source layer]'
+        '(-l --layer)'{-l+,--layer=}'[limit to machines in the specified layer]: :__layers_enabled'
+      )
+      ;;
+    (show-overlayed)
+      args+=(
+        '(-f --filenames)'{-f,--filenames}'[list filenames of higher priority recipes with the ones they overlay indented underneath]'
+        '(-s --same-version)'{-s,--same-version}'[only list overlayed recipes where the version is the same]'
+        '(--mc)'--mc='[use specified multiconfig]'
+      )
+      ;;
+    (show-recipes)
+      args+=(
+        '(-f --filenames)'{-f,--filenames}'[list filenames of higher priority recipes with the ones they overlay indented underneath]'
+        '(-r --recipes-only)'{-r,--recipes-only}'[list recipes only]'
+        '(-m --multiple)'{-m,--multiple}'[only list where multiple recipes exist for the same recipe name]'
+        '(-i --inherits)'{-i+,--inherits=}'[only list recipes that inherit the named class(es) (comma-separated)]'
+        '(-l --layer)'{-l+,--layer=}'[only list recipes from the selected layer]'
+        '(-b --bare)'{-b,--bare}'[output just names without the "(skipped)" marker]'
+        '(--mc)'--mc='[use specified multiconfig]'
+
+        '*: :__recipes'
+      )
+      ;;
+  esac
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    print -rl - $args
+    return 0
+  fi
+
+  _arguments $(__arguments_opts) $args && ret=0
+
+  return ret
+}
+
+__bitbake_layers_commands ()
+{
+  local -a _bitbake_layers_commands
+
+  _bitbake_layers_commands=(
+    'add-layer:add one or more layers to bblayers.conf'
+    'create-layer:create a basic layer'
+    'create-layers-setup:write file that replicates current layers'
+    'flatten:flatten layer configuration into a separate output directory'
+    'layerindex-fetch:fetch a layer from a layer index along with its dependent layers'
+    'layerindex-show-depends:find layer dependencies from layer index'
+    'remove-layer:remove one or more layers from bblayers.conf'
+    'save-build-conf:save the currently active build configuration'
+    'show-appends:list bbappend files and recipe files they apply to'
+    'show-cross-depends:show dependencies between recipes that cross layer boundaries'
+    'show-layers:show current configured layers'
+    'show-machines:list the machines available in the currently configured layers'
+    'show-overlayed:list overlayed recipes (where the same recipe exists in another layer)'
+    'show-recipes:list available recipes'
+  )
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMANDS == 1 ]]; then
+    print -rl - $_bitbake_layers_commands
+    return 0
+  fi
+
+  _describe -t _bitbake_layers_commands "bitbake_layers commands" _bitbake_layers_commands
+}
+
+_bitbake-layers()
+{
+  integer ret=1
+  local -a args
+
+  # Global arguments, not command specific.
+  args=(
+    '(: * -)'{-h,--help}'[display help information]'
+    '(-d --debug)'{-d,--debug}'[enable debug output]'
+    '(-q --quiet)'{-q,--quiet}'[print only errors]'
+    '(-F --force)'{-F,--force}'[forced execution: can be specified multiple times. -F]'
+    '(--color)'--color='[colorize output (where COLOR is auto, always, never)]'
+
+    '(-): :->command'
+    '(-)*:: :->option-or-argument'
+  )
+
+  # test-complete logic
+  if [[ $_COMPLETE_LIST_SUBCOMMANDS == 1 ]]; then
+    state="command"
+  elif [[ $_COMPLETE_LIST_SUBCOMMAND == 1 ]]; then
+    state="option-or-argument"
+  elif [[ $_COMPLETE_LIST_ARGS == 1 ]]; then
+    print -rl - $args
+    return 0
+  else
+    _arguments $(__arguments_opts) $args && ret=0
+  fi
+
+  case $state in
+    (command)
+      # Completion for bitbake_layers's commands
+      __bitbake_layers_commands && ret=0
+      ;;
+    (option-or-argument)
+      # Completion for bitbake_layers commands's options.
+      __bitbake_layers_subcommand && ret=0
       ;;
   esac
 
