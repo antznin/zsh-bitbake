@@ -15,7 +15,7 @@ jobs:
       BITBAKE_URL: https://git.openembedded.org/bitbake
       OECORE_URL: https://git.openembedded.org/openembedded-core
     runs-on: ubuntu-latest
-    container: antznin/simple-yocto-image:latest
+    container: ghcr.io/antznin/bitbake-setup:latest
     steps:
     - uses: actions/checkout@v4
 
