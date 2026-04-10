@@ -812,6 +812,7 @@ __bitbake_layers_subcommand ()
         '(-l --layer)'{-l+,--layer=}'[only list recipes from the selected layer]'
         '(-b --bare)'{-b,--bare}'[output just names without the "(skipped)" marker]'
         '(--mc)'--mc='[use specified multiconfig]'
+        '(--show-variants)'--show-variants'[show all BBCLASSEXTEND recipe variants]'
 
         '*: :__recipes'
       )
