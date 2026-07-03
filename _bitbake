@@ -330,6 +330,7 @@ __devtool_subcommand ()
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
         '(-a --all)'{-a,--all}'[show all recipes, not just recipes needing upgrade]'
+        '(--stable)'--stable'[only consider stable upstream releases]'
 
         '*: :__recipes'
       )
@@ -456,6 +457,7 @@ __devtool_subcommand ()
     (latest-version)
       args+=(
         '(-h --help)'{-h,--help}'[print usage]'
+        '(--stable)'--stable'[only consider stable upstream releases]'
 
         ': :__recipes'
       )
@@ -569,6 +571,7 @@ __devtool_subcommand ()
         '(--no-same-dir)'--no-same-dir'[force build in a separate build directory]'
         '(--keep-temp)'--keep-temp'[keep temporary directory (for debugging)]'
         '(--keep-failure)'--keep-failure'[keep failed upgrade recipe and associated files (for debugging)]'
+        '(--stable)'--stable'[only consider stable upstream releases]'
 
         ': :__recipes'
         ': :_directories'  # srctree
