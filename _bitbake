@@ -25,6 +25,7 @@ __bb_tasks()
 
   _bb_tasks=(
     'build:default task for a recipe'
+    'build_without_rm_work:default task for a recipe (no WORKDIR removal with rm_work class)'
     'checkuri:validates the src_uri value'
     'clean:removes all output files for a target'
     'cleanall:removes all output files, shared state cache, and downloaded source files for a target'
