@@ -366,6 +366,7 @@ __devtool_subcommand ()
         '(-e --ssh-exec)'{-e+,--ssh-exec=}'[executable to use in place of ssh]'
         '(-P --port)'{-P+,--port=}'[port to use for connection to the target]'
         '(-I --key)'{-I+,--key=}'[ssh private key for connection to the target]'
+        '(--package)'--package'[only deploy files belonging to specified package according to its FILES]'
         '(-S --strip --no-strip)'{-S,--strip}'[strip executables prior to deploying]'
         '(--no-strip -S --strip)'--no-strip'[don'\''t strip executables prior to deploy]'
 
@@ -443,7 +444,7 @@ __devtool_subcommand ()
         '(-s --show-status)'{-s,--show-status}'[show progress/status output]'
         '(-p --no-preserve)'{-p,--no-preserve}'[do not preserve existing files]'
         '(--no-check-space)'--no-check-space'[do not check for available space before deploying]'
-
+        '(--package)'--package'[only deploy files belonging to specified package according to its FILES]'
         ': :__recipes_workspace'
       )
       ;;
