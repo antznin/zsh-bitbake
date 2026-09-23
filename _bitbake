@@ -366,6 +366,7 @@ __devtool_subcommand ()
         '(-P --port)'{-P+,--port=}'[port to use for connection to the target]'
         '(-I --key)'{-I+,--key=}'[ssh private key for connection to the target]'
         '(--package)'--package'[only deploy files belonging to specified package according to its FILES]'
+        '(--file-glob)'--file-glob'[only deploy files whose installed path matches this glob pattern]'
         '(-S --strip --no-strip)'{-S,--strip}'[strip executables prior to deploying]'
         '(--no-strip -S --strip)'--no-strip'[don'\''t strip executables prior to deploy]'
 
@@ -444,6 +445,7 @@ __devtool_subcommand ()
         '(-p --no-preserve)'{-p,--no-preserve}'[do not preserve existing files]'
         '(--no-check-space)'--no-check-space'[do not check for available space before deploying]'
         '(--package)'--package'[only deploy files belonging to specified package according to its FILES]'
+        '(--file-glob)'--file-glob'[only deploy files whose installed path matches this glob pattern]'
         ': :__recipes_workspace'
       )
       ;;
